@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { db, auth } from './firebase';
+import { db, auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
 import {
@@ -29,6 +29,9 @@ import {
   ChevronDown,
   RotateCw,
   MoreVertical,
+  LogOut,
+  Mail,
+  Lock,
 } from 'lucide-react';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -44,7 +47,7 @@ const MEAL_COLORS = {
   Dinner: { bg: 'var(--meal-dinner-bg)', border: 'var(--meal-border)', text: '#78645a', glow: 'rgba(120,100,90,0.05)' }, // Earth
 };
 
-const EATING_OUT_PREFIX = '🍴 Eating Out: ';
+const EATING_OUT_PREFIX = '🍽️ Eating Out: ';
 
 const DEFAULT_MENU_CATEGORIES = ['Breakfast', 'Bread', 'Rice', 'Snack', 'Curry', 'Dessert'];
 
@@ -130,8 +133,90 @@ function LoadingOverlay() {
     <div className="loading-overlay">
       <div className="loading-content">
         <div className="loading-spinner"></div>
-        <p>Syncing your kitchen...</p>
+        <p>Prepping your table...</p>
       </div>
+    </div>
+  );
+}
+
+function LoginScreen() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleAuth = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      if (isSignUp) {
+        await createUserWithEmailAndPassword(auth, email, password);
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
+    } catch (err) {
+      console.error("Auth Error:", err.code);
+      if (err.code === 'auth/invalid-credential') setError('Invalid email or password');
+      else if (err.code === 'auth/email-already-in-use') setError('This email is already registered');
+      else if (err.code === 'auth/weak-password') setError('Password should be at least 6 characters');
+      else if (err.code === 'auth/operation-not-allowed') setError('Email/Password login is not enabled in your Firebase Console.');
+      else setError('Authentication failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="auth-page">
+      <div className="auth-background-blobs">
+        <div className="blob blob-1"></div>
+        <div className="blob blob-2"></div>
+      </div>
+      
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="auth-card">
+        <div className="auth-header">
+          <div className="auth-logo">
+            <ChefHat size={32} />
+          </div>
+          <h1 className="auth-title">PlanBite</h1>
+          <p className="auth-subtitle">{isSignUp ? 'Create your kitchen account' : 'Welcome back to your kitchen'}</p>
+        </div>
+
+        <form className="auth-form" onSubmit={handleAuth}>
+          {error && <div className="auth-error">{error}</div>}
+          
+          <div className="auth-input-group">
+            <label>Email Address</label>
+            <div className="auth-input-wrap">
+              <Mail size={18} />
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} 
+                placeholder="chef@example.com" required disabled={loading} />
+            </div>
+          </div>
+
+          <div className="auth-input-group">
+            <label>Password</label>
+            <div className="auth-input-wrap">
+              <Lock size={18} />
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} 
+                placeholder="••••••••" required disabled={loading} minLength={6} />
+            </div>
+          </div>
+
+          <button type="submit" className="auth-btn" disabled={loading}>
+            {loading ? <div className="loading-spinner-sm"></div> : (isSignUp ? 'Sign Up' : 'Sign In')}
+          </button>
+        </form>
+
+        <div className="auth-footer">
+          <span>{isSignUp ? 'Already have an account?' : "Don't have an account?"}</span>
+          <button onClick={() => { setIsSignUp(!isSignUp); setError(''); }} className="auth-toggle-btn">
+            {isSignUp ? 'Sign In' : 'Create Account'}
+          </button>
+        </div>
+      </motion.div>
     </div>
   );
 }
@@ -215,7 +300,7 @@ function FormField({ label, children }) {
 
 // ─── Meal Slot ────────────────────────────────────────────────────────────────
 
-function MealSlot({ meal, value, onChange, menuItems, onOpenPicker }) {
+function MealSlot({ meal, value, onChange, menuItems, onOpenPicker, onNavigateToBite }) {
   const [editing, setEditing] = useState(false);
   const [isEatingOut, setIsEatingOut] = useState(false);
   const [eatingOutDetails, setEatingOutDetails] = useState('');
@@ -261,10 +346,11 @@ function MealSlot({ meal, value, onChange, menuItems, onOpenPicker }) {
     setDraftDishes(updated.length > 0 ? updated : ['']);
   };
 
-  const dishes = value ? value.split(',').map(d => d.trim()).filter(Boolean) : [];
+  const isRestaurant = value?.includes('Eating Out:');
+  const dishes = value && !isRestaurant ? value.split(',').map(d => d.trim()).filter(Boolean) : [];
 
   return (
-    <div className={`meal-slot ${value?.startsWith(EATING_OUT_PREFIX) ? 'is-eating-out' : ''}`} 
+    <div className={`meal-slot ${isRestaurant ? 'is-eating-out' : ''}`} 
       style={{ '--slot-bg': colors.bg, '--slot-border': colors.border, '--slot-text': colors.text }}>
       <div className="meal-slot-label"><Icon size={11} style={{ color: colors.text }} /><span>{meal}</span></div>
       {editing ? (
@@ -272,9 +358,14 @@ function MealSlot({ meal, value, onChange, menuItems, onOpenPicker }) {
           {isEatingOut ? (
             <div className="meal-input-group">
               <label className="eating-out-label">Restaurant / Details</label>
-              <input className="meal-slot-input eating-out-input" value={eatingOutDetails} autoFocus
-                onChange={e => setEatingOutDetails(e.target.value)} onKeyDown={e => e.key === 'Enter' && commit()}
-                placeholder="Where are you eating?" maxLength={60} />
+              <div className="input-with-icon">
+                <input className="meal-slot-input eating-out-input" value={eatingOutDetails} autoFocus
+                  onChange={e => setEatingOutDetails(e.target.value)} onKeyDown={e => e.key === 'Enter' && commit()}
+                  placeholder="Where are you eating?" maxLength={60} />
+                <button className="inner-input-picker-btn" onClick={() => onOpenPicker({ initialMode: 'eating-out' })} title="Select from Next Bites">
+                  <Star size={16} />
+                </button>
+              </div>
             </div>
           ) : (
             draftDishes.map((dish, idx) => {
@@ -321,26 +412,50 @@ function MealSlot({ meal, value, onChange, menuItems, onOpenPicker }) {
         </div>
       ) : (
         <div className="meal-slot-display-container">
-          <button className={`meal-slot-display ${dishes.length > 0 ? 'filled' : 'empty'}`} onClick={() => setEditing(true)}>
-            {value?.startsWith(EATING_OUT_PREFIX) ? (
-              <div className="eating-out-badge">
-                <div className="eating-out-title">Dining Out</div>
-                <div className="eating-out-details">{value.replace(EATING_OUT_PREFIX, '')}</div>
+          {value?.includes('Eating Out:') ? (
+            <div className="eating-out-badge-wrap">
+              <div className="eating-out-badge" onClick={(e) => { 
+                e.preventDefault();
+                e.stopPropagation();
+                // Extremely robust name extraction: find the LAST colon or "Eating Out:" occurrence
+                let name = '';
+                if (value.includes('Eating Out:')) {
+                  name = value.split('Eating Out:').pop().trim();
+                } else if (value.includes(':')) {
+                  name = value.split(':').pop().trim();
+                } else {
+                  name = value.replace(/^[^\w\s]+/, '').trim(); // Strip emojis at start
+                }
+                console.log("MealSlot: Clicked badge, name extracted:", name);
+                onNavigateToBite(name); 
+              }}>
+                <div className="eating-out-title-row">
+                  <div className="eating-out-title">Dining Out</div>
+                  <MapPin size={12} className="eating-out-link-icon" />
+                </div>
+                <div className="eating-out-details">{value.split(':').pop().trim()}</div>
               </div>
-            ) : dishes.length > 0 ? (
-              <div className="meal-chips">
-                {dishes.map((d, i) => (
-                  <span key={i} className="meal-chip">
-                    {d}
-                    <X size={10} className="chip-del" onMouseDown={e => { e.stopPropagation(); const nd = dishes.filter((_, idx)=>idx!==i); onChange(nd.join(', ')); }} />
-                  </span>
-                ))}
-                <Plus size={12} style={{ opacity: 0.4, marginLeft: 4 }} />
-              </div>
-            ) : (
-              <span className="add-meal-hint"><Plus size={12} /> Add meal</span>
-            )}
-          </button>
+              <button className="eating-out-delete-btn" onClick={() => onChange('')} title="Remove or change">
+                <X size={14} />
+              </button>
+            </div>
+          ) : (
+            <button className={`meal-slot-display ${dishes.length > 0 ? 'filled' : 'empty'}`} onClick={() => setEditing(true)}>
+              {dishes.length > 0 ? (
+                <div className="meal-chips">
+                  {dishes.map((d, i) => (
+                    <span key={i} className="meal-chip">
+                      {d}
+                      <X size={10} className="chip-del" onMouseDown={e => { e.stopPropagation(); const nd = dishes.filter((_, idx)=>idx!==i); onChange(nd.join(', ')); }} />
+                    </span>
+                  ))}
+                  <Plus size={12} style={{ opacity: 0.4, marginLeft: 4 }} />
+                </div>
+              ) : (
+                <span className="add-meal-hint"><Plus size={12} /> Add meal</span>
+              )}
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -349,7 +464,7 @@ function MealSlot({ meal, value, onChange, menuItems, onOpenPicker }) {
 
 // ─── Day Card ─────────────────────────────────────────────────────────────────
 
-function DayCard({ dayName, dayDate, meals, onMealChange, menuItems, onOpenPicker }) {
+function DayCard({ dayName, dayDate, meals, onMealChange, menuItems, onOpenPicker, onNavigateToBite }) {
   const todayFlag = dayDate && isToday(dayDate);
   return (
     <motion.div layout className={`day-card ${todayFlag ? 'today' : ''}`}
@@ -366,7 +481,7 @@ function DayCard({ dayName, dayDate, meals, onMealChange, menuItems, onOpenPicke
       </div>
       <div className="meal-slots">
         {MEALS.map(meal => (
-          <MealSlot key={meal} meal={meal} value={meals[meal]} onChange={val => onMealChange(meal, val)} menuItems={menuItems} onOpenPicker={() => onOpenPicker(meal)} />
+          <MealSlot key={meal} meal={meal} value={meals[meal]} onChange={val => onMealChange(meal, val)} menuItems={menuItems} onOpenPicker={(extra) => onOpenPicker(meal, extra)} onNavigateToBite={onNavigateToBite} />
         ))}
       </div>
     </motion.div>
@@ -375,7 +490,7 @@ function DayCard({ dayName, dayDate, meals, onMealChange, menuItems, onOpenPicke
 
 // ─── Planner Tab ─────────────────────────────────────────────────────────────
 
-function PlannerTab({ plan, onPlanChange, menuItems, onOpenPicker }) {
+function PlannerTab({ plan, onPlanChange, menuItems, onOpenPicker, onNavigateToBite }) {
   const [weekOffset, setWeekOffset] = useState(0);
   const [pastExpanded, setPastExpanded] = useState(false);
   const weekKey = getWeekKey(weekOffset);
@@ -431,7 +546,7 @@ function PlannerTab({ plan, onPlanChange, menuItems, onOpenPicker }) {
                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: 'hidden' }}>
                   <div className="days-list" style={{ marginTop: 12 }}>
                     {pastDays.map(d => (
-                      <DayCard key={d.key} dayName={d.dayName} dayDate={d.date} meals={d.meals} onMealChange={(meal, val) => handleMealChange(d.dayId, meal, val)} menuItems={menuItems} onOpenPicker={(meal) => onOpenPicker({ weekKey, day: d.dayId, meal })} />
+                      <DayCard key={d.key} dayName={d.dayName} dayDate={d.date} meals={d.meals} onMealChange={(meal, val) => handleMealChange(d.dayId, meal, val)} menuItems={menuItems} onOpenPicker={(meal, extra) => onOpenPicker({ weekKey, day: d.dayId, meal, ...extra })} onNavigateToBite={onNavigateToBite} />
                     ))}
                   </div>
                 </motion.div>
@@ -441,7 +556,7 @@ function PlannerTab({ plan, onPlanChange, menuItems, onOpenPicker }) {
         )}
 
         {mainDays.map(d => (
-          <DayCard key={d.key} dayName={d.dayName} dayDate={d.date} meals={d.meals} onMealChange={(meal, val) => handleMealChange(d.dayId, meal, val)} menuItems={menuItems} onOpenPicker={(meal) => onOpenPicker({ weekKey, day: d.dayId, meal })} />
+          <DayCard key={d.key} dayName={d.dayName} dayDate={d.date} meals={d.meals} onMealChange={(meal, val) => handleMealChange(d.dayId, meal, val)} menuItems={menuItems} onOpenPicker={(meal, extra) => onOpenPicker({ weekKey, day: d.dayId, meal, ...extra })} onNavigateToBite={onNavigateToBite} />
         ))}
       </div>
     </div>
@@ -964,7 +1079,7 @@ function NextBiteCard({ bite, onEdit, onDelete, onToggleComplete }) {
 
   return (
     <motion.div layout initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
-      className={`next-bite-card ${bite.completed ? 'completed' : ''}`}>
+      className={`next-bite-card ${bite.completed ? 'completed' : ''}`} id={`bite-${bite.id}`}>
       <div className="bite-card-header">
         <div className="bite-card-title-group">
           <h4 className="bite-card-name" style={{ textDecoration: bite.completed ? 'line-through' : 'none' }}>{bite.name}</h4>
@@ -1000,12 +1115,33 @@ function NextBiteCard({ bite, onEdit, onDelete, onToggleComplete }) {
   );
 }
 
-function NextBitesTab({ bites, setBites }) {
+function NextBitesTab({ bites, setBites, initialSearch, setInitialSearch, highlightedBiteId, setHighlightedBiteId }) {
   const [showForm, setShowForm] = useState(false);
   const [editingBite, setEditingBite] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [completedExpanded, setCompletedExpanded] = useState(false);
   const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    if (initialSearch) {
+      setSearch(initialSearch);
+      setInitialSearch(''); // Clear it back in parent once applied
+    }
+  }, [initialSearch, setInitialSearch]);
+
+  useEffect(() => {
+    if (highlightedBiteId) {
+      setTimeout(() => {
+        const el = document.getElementById(`bite-${highlightedBiteId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('highlight-pulse');
+          setTimeout(() => el.classList.remove('highlight-pulse'), 3000);
+        }
+        setHighlightedBiteId(null);
+      }, 100);
+    }
+  }, [highlightedBiteId, setHighlightedBiteId]);
 
   const filtered = bites.filter(b => 
     b.name.toLowerCase().includes(search.toLowerCase()) || 
@@ -1108,77 +1244,131 @@ const TABS = [
   { id: 'shopping', label: 'Shopping', Icon: ShoppingCart },
 ];
 
-function MenuPicker({ isOpen, onClose, menuItems, onSelect }) {
+function MenuPicker({ isOpen, onClose, menuItems, nextBites, onSelect, initialMode }) {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
+  const [pickerMode, setPickerMode] = useState(initialMode || 'menu'); // 'menu' or 'eating-out'
 
-  const categories = ['All', ...new Set(menuItems.map(m => m.category))];
+  useEffect(() => {
+    if (isOpen && initialMode) {
+      setPickerMode(initialMode);
+    }
+  }, [isOpen, initialMode]);
 
-  const filtered = menuItems.filter(item => {
-    const matchesCat = activeCategory === 'All' || item.category === activeCategory;
-    const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase());
-    return matchesCat && matchesSearch;
-  });
+  const categories = pickerMode === 'menu' ? ['All', ...new Set(menuItems.map(m => m.category))] : [];
 
-  const grouped = filtered.reduce((acc, item) => {
-    if (!acc[item.category]) acc[item.category] = [];
-    acc[item.category].push(item);
-    return acc;
-  }, {});
+  const filteredItems = pickerMode === 'menu' 
+    ? menuItems.filter(item => {
+        const matchesCat = activeCategory === 'All' || item.category === activeCategory;
+        const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase());
+        return matchesCat && matchesSearch;
+      })
+    : nextBites.filter(bite => !bite.completed && bite.name.toLowerCase().includes(search.toLowerCase()));
+
+  const grouped = pickerMode === 'menu' 
+    ? filteredItems.reduce((acc, item) => {
+        if (!acc[item.category]) acc[item.category] = [];
+        acc[item.category].push(item);
+        return acc;
+      }, {})
+    : null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Select Dishes">
+    <Modal isOpen={isOpen} onClose={onClose} title="Select Meals">
+      <div className="picker-header">
+        <div className="picker-mode-toggle">
+          <button className={`picker-mode-btn ${pickerMode === 'menu' ? 'active' : ''}`}
+            onClick={() => { setPickerMode('menu'); setSearch(''); }}>
+            Home Menu
+          </button>
+          <button className={`picker-mode-btn ${pickerMode === 'eating-out' ? 'active' : ''}`}
+            onClick={() => { setPickerMode('eating-out'); setSearch(''); }}>
+            Eating Out
+          </button>
+        </div>
+      </div>
+
       <div className="search-bar" style={{ marginBottom: 12 }}>
         <Search size={15} className="search-icon" />
-        <input className="search-input" placeholder="Search saved dishes..." value={search} onChange={e => setSearch(e.target.value)} />
+        <input className="search-input" 
+          placeholder={pickerMode === 'menu' ? "Search saved dishes..." : "Search restaurants..."} 
+          value={search} onChange={e => setSearch(e.target.value)} />
       </div>
 
-      <div className="category-pills" style={{ marginBottom: 16 }}>
-        {categories.map(cat => (
-          <button key={cat} className={`cat-pill ${activeCategory === cat ? 'active' : ''}`}
-            style={activeCategory === cat && cat !== 'All' ? { '--pill-color': catColor(cat) } : {}}
-            onClick={() => setActiveCategory(cat)}>
-            {cat}
-          </button>
-        ))}
-      </div>
-
-      {menuItems.length === 0 ? (
-        <div className="empty-state">
-          <UtensilsCrossed size={36} className="empty-icon" />
-          <p>Menu is empty</p>
-          <span>Add some dishes in the Menu tab first</span>
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="empty-state"><p>No results found</p></div>
-      ) : (
-        <div className="menu-picker-list">
-          <div className="menu-grouped" style={{ marginBottom: 80 }}>
-            {Object.entries(grouped).map(([cat, items]) => (
-              <div key={cat} className="menu-group">
-                <div className="menu-group-label">
-                  <div className="menu-group-dot" style={{ background: catColor(cat) }} />
-                  <span>{cat}</span>
-                </div>
-                <div className="menu-items-list">
-                  {items.map(item => (
-                    <button key={item.id} className="menu-item" onClick={() => onSelect(item.name)} style={{ textAlign: 'left', width: '100%' }}>
-                      <span className="menu-item-name">{item.name}</span>
-                      <Plus size={14} style={{ opacity: 0.4 }} />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, background: 'linear-gradient(transparent, var(--bg-card))', pointerEvents: 'none' }}>
-            <button className="primary-btn" onClick={onClose} style={{ pointerEvents: 'auto', width: '100%', borderRadius: 16 }}>
-              Done <Check size={18} style={{ marginLeft: 6 }} />
+      {pickerMode === 'menu' && (
+        <div className="category-pills" style={{ marginBottom: 16 }}>
+          {categories.map(cat => (
+            <button key={cat} className={`cat-pill ${activeCategory === cat ? 'active' : ''}`}
+              style={activeCategory === cat && cat !== 'All' ? { '--pill-color': catColor(cat) } : {}}
+              onClick={() => setActiveCategory(cat)}>
+              {cat}
             </button>
-          </div>
+          ))}
         </div>
       )}
+
+      {pickerMode === 'menu' ? (
+        menuItems.length === 0 ? (
+          <div className="empty-state">
+            <UtensilsCrossed size={36} className="empty-icon" />
+            <p>Menu is empty</p>
+            <span>Add some dishes in the Menu tab first</span>
+          </div>
+        ) : filteredItems.length === 0 ? (
+          <div className="empty-state"><p>No results found</p></div>
+        ) : (
+          <div className="menu-picker-list">
+            <div className="menu-grouped" style={{ marginBottom: 80 }}>
+              {Object.entries(grouped).map(([cat, items]) => (
+                <div key={cat} className="menu-group">
+                  <div className="menu-group-label">
+                    <div className="menu-group-dot" style={{ background: catColor(cat) }} />
+                    <span>{cat}</span>
+                  </div>
+                  <div className="menu-items-list">
+                    {items.map(item => (
+                      <button key={item.id} className="menu-item" onClick={() => onSelect(item.name)} style={{ textAlign: 'left', width: '100%' }}>
+                        <span className="menu-item-name">{item.name}</span>
+                        <Plus size={14} style={{ opacity: 0.4 }} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      ) : (
+        nextBites.filter(b => !b.completed).length === 0 ? (
+          <div className="empty-state">
+            <Star size={36} className="empty-icon" />
+            <p>No restaurants in wishlist</p>
+            <span>Add some in the Next Bites tab</span>
+          </div>
+        ) : filteredItems.length === 0 ? (
+          <div className="empty-state"><p>No restaurants found</p></div>
+        ) : (
+          <div className="menu-picker-list">
+            <div className="restaurants-list-picker" style={{ marginBottom: 80, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {filteredItems.map(bite => (
+                <button key={bite.id} className="menu-item" onClick={() => { onSelect(`${EATING_OUT_PREFIX}${bite.name}`); onClose(); }} style={{ textAlign: 'left', width: '100%' }}>
+                  <div style={{ flex: 1 }}>
+                    <span className="menu-item-name">{bite.name}</span>
+                    {bite.location && <div style={{ fontSize: '11px', color: 'var(--text-3)', marginTop: 2 }}>{bite.location}</div>}
+                  </div>
+                  <Plus size={14} style={{ opacity: 0.4 }} />
+                </button>
+              ))}
+            </div>
+          </div>
+        )
+      )}
+
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, background: 'linear-gradient(transparent, var(--bg-card))', pointerEvents: 'none' }}>
+        <button className="primary-btn" onClick={onClose} style={{ pointerEvents: 'auto', width: '100%', borderRadius: 16 }}>
+          Done <Check size={18} style={{ marginLeft: 6 }} />
+        </button>
+      </div>
     </Modal>
   );
 }
@@ -1187,6 +1377,8 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('planner');
+  const [nextBitesSearch, setNextBitesSearch] = useState('');
+  const [highlightedBiteId, setHighlightedBiteId] = useState(null);
   const [plan, setPlan] = useState({});
   const [menuItems, setMenuItems] = useState([]);
   const [recipes, setRecipes] = useState([]);
@@ -1207,12 +1399,12 @@ export default function App() {
   useEffect(() => {
     console.log("Firebase Auth: Initializing...");
     return onAuthStateChanged(auth, (u) => {
-      if (u) {
-        console.log("Firebase Auth: Signed in as", u.uid);
-        setUser(u);
-      } else {
+      setUser(u);
+      if (!u) {
         console.warn("Firebase Auth: No user signed in");
         setLoading(false);
+      } else {
+        console.log("Firebase Auth: Signed in as", u.uid);
       }
     });
   }, []);
@@ -1220,26 +1412,47 @@ export default function App() {
   // 2. Initial Data Load & Migration (Refactored for solid multi-device sync)
   useEffect(() => {
     if (!user) return;
-    const SHARED_ID = 'shared-kitchen-v1';
-    const userDocRef = doc(db, 'users', SHARED_ID);
+    const userDocRef = doc(db, 'users', user.uid);
 
     let unsub = null;
 
     const initializeData = async () => {
       try {
         const snap = await getDoc(userDocRef);
-        if (!snap.exists()) {
-          console.log("Firestore: First initialization...");
-          await setDoc(userDocRef, {
-            plan: load('mp-plan', {}),
-            menu: load('mp-menu', []),
-            recipes: load('mp-recipes', []),
-            shopping: load('mp-shopping', []),
-            nextbites: load('mp-nextbites', []),
-          });
+        let currentData = snap.exists() ? snap.data() : null;
+        
+        // If account is new OR explicitly empty, try to migrate from shared data
+        const isEmpty = !currentData || (
+          Object.keys(currentData.plan || {}).length === 0 &&
+          (currentData.menu || []).length === 0 &&
+          (currentData.recipes || []).length === 0 &&
+          (currentData.nextbites || []).length === 0
+        );
+
+        if (isEmpty) {
+          console.log("Firestore: Account is empty. Checking for shared data...");
+          const sharedDocRef = doc(db, 'users', 'shared-kitchen-v1');
+          const sharedSnap = await getDoc(sharedDocRef);
+
+          if (sharedSnap.exists()) {
+            console.log("Firestore: Found shared data! Migrating to account...");
+            const sharedData = sharedSnap.data();
+            await setDoc(userDocRef, sharedData);
+            // After setting doc, the listener will take over
+          } else {
+            console.log("Firestore: No shared data found. Using local backup...");
+            const localData = {
+              plan: load('mp-plan', {}),
+              menu: load('mp-menu', []),
+              recipes: load('mp-recipes', []),
+              shopping: load('mp-shopping', []),
+              nextbites: load('mp-nextbites', []),
+            };
+            await setDoc(userDocRef, localData);
+          }
         }
 
-        // Start live listener AFTER Ensuring the doc exists
+        // Start live listener
         unsub = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data();
@@ -1273,9 +1486,8 @@ export default function App() {
   // Firestore update helpers
   const updateFirebase = async (field, value) => {
     if (!user) return;
-    const SHARED_ID = 'shared-kitchen-v1';
     try {
-      await setDoc(doc(db, 'users', SHARED_ID), { [field]: value }, { merge: true });
+      await setDoc(doc(db, 'users', user.uid), { [field]: value }, { merge: true });
     } catch (err) {
       console.error(`Firestore: Update failed for ${field}:`, err.message);
     }
@@ -1300,6 +1512,32 @@ export default function App() {
   const handleNextBitesChange = (val) => {
     const newVal = typeof val === 'function' ? val(nextBites) : val;
     setNextBites(newVal); updateFirebase('nextbites', newVal);
+  };
+
+  const handleNavigateToBite = (name) => {
+    if (!name) return;
+    const cleanName = name.toLowerCase().trim();
+    console.log("App: Navigating to Next Bite card for:", cleanName);
+    
+    // Find the bite BEFORE switching tabs to ensure we have the ID
+    const bite = nextBites.find(b => 
+      b.name.toLowerCase().trim() === cleanName || 
+      b.name.toLowerCase().includes(cleanName) || 
+      cleanName.includes(b.name.toLowerCase())
+    );
+
+    setTab('nextbites');
+    setNextBitesSearch(name);
+    
+    if (bite) {
+      console.log("App: Found matching bite! Highlighting ID:", bite.id);
+      setHighlightedBiteId(bite.id);
+    } else {
+      console.warn("App: Could not find bite matching:", cleanName, "in current wishlist:", nextBites);
+    }
+    
+    // Scroll to top to ensure visibility
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handlePickerSelect = (name) => {
@@ -1328,6 +1566,8 @@ export default function App() {
   return (
     <div className="app-shell">
       {loading && <LoadingOverlay />}
+      {!user ? <LoginScreen /> : (
+        <>
 
       <header className="app-header">
         <div className="header-brand">
@@ -1352,6 +1592,9 @@ export default function App() {
           <button className="header-refresh-btn" onClick={() => window.location.reload()} title="Sync Now">
             <RotateCw size={18} />
           </button>
+          <button className="header-refresh-btn" onClick={() => signOut(auth)} title="Sign Out">
+            <LogOut size={18} />
+          </button>
           <div className="header-sparkle" title="PlanBite Sparkle">
             <Sparkles size={18} />
           </div>
@@ -1366,11 +1609,11 @@ export default function App() {
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2, ease: 'easeOut' }}
               className="tab-content">
-              {tab === 'planner' && <PlannerTab plan={plan} onPlanChange={handlePlanChange} menuItems={menuItems} onOpenPicker={setPickerSlot} />}
+              {tab === 'planner' && <PlannerTab plan={plan} onPlanChange={handlePlanChange} menuItems={menuItems} onOpenPicker={setPickerSlot} onNavigateToBite={handleNavigateToBite} />}
               {tab === 'menu' && <MenuTab menuItems={menuItems} setMenuItems={handleMenuChange} />}
               {tab === 'recipes' && <RecipesTab recipes={recipes} setRecipes={handleRecipesChange} />}
               {tab === 'shopping' && <ShoppingTab shoppingList={shoppingList} setShoppingList={handleShoppingChange} />}
-              {tab === 'nextbites' && <NextBitesTab bites={nextBites} setBites={handleNextBitesChange} />}
+              {tab === 'nextbites' && <NextBitesTab bites={nextBites} setBites={handleNextBitesChange} initialSearch={nextBitesSearch} setInitialSearch={setNextBitesSearch} highlightedBiteId={highlightedBiteId} setHighlightedBiteId={setHighlightedBiteId} />}
             </motion.div>
           )}
         </AnimatePresence>
@@ -1379,7 +1622,9 @@ export default function App() {
           isOpen={!!pickerSlot}
           onClose={() => setPickerSlot(null)}
           menuItems={menuItems}
+          nextBites={nextBites}
           onSelect={handlePickerSelect}
+          initialMode={pickerSlot?.initialMode}
         />
       </main>
 
@@ -1394,6 +1639,8 @@ export default function App() {
           </button>
         ))}
       </nav>
+        </>
+      )}
     </div>
   );
 }
