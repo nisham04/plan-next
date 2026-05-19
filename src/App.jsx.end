@@ -1,0 +1,295 @@
+    </Modal>
+  );
+}
+
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState('planner');
+  const [nextBitesSearch, setNextBitesSearch] = useState('');
+  const [highlightedBiteId, setHighlightedBiteId] = useState(null);
+  const [plan, setPlan] = useState({});
+  const [menuItems, setMenuItems] = useState([]);
+  const [recipes, setRecipes] = useState([]);
+  const [shoppingList, setShoppingList] = useState([]);
+  const [nextBites, setNextBites] = useState([]);
+  const [destinations, setDestinations] = useState([]);
+  const [movies, setMovies] = useState([]);
+  const [series, setSeries] = useState([]);
+  const [pickerSlot, setPickerSlot] = useState(null);
+  const [theme, setTheme] = useState(() => localStorage.getItem('pb-theme') || 'light');
+
+  // Theme effect
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('pb-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
+
+  // 1. Auth Listener
+  useEffect(() => {
+    console.log("Firebase Auth: Initializing...");
+    return onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      if (!u) {
+        console.warn("Firebase Auth: No user signed in");
+        setLoading(false);
+      } else {
+        console.log("Firebase Auth: Signed in as", u.uid);
+      }
+    });
+  }, []);
+
+  // 2. Initial Data Load & Migration (Refactored for solid multi-device sync)
+  useEffect(() => {
+    if (!user) return;
+    const userDocRef = doc(db, 'users', user.uid);
+
+    let unsub = null;
+
+    const initializeData = async () => {
+      try {
+        const snap = await getDoc(userDocRef);
+        let currentData = snap.exists() ? snap.data() : null;
+        
+        // If account is new OR explicitly empty, try to migrate from shared data
+        const isEmpty = !currentData || (
+          Object.keys(currentData.plan || {}).length === 0 &&
+          (currentData.menu || []).length === 0 &&
+          (currentData.recipes || []).length === 0 &&
+          (currentData.nextbites || []).length === 0
+        );
+
+        if (isEmpty) {
+          console.log("Firestore: Account is empty. Checking for shared data...");
+          const sharedDocRef = doc(db, 'users', 'shared-kitchen-v1');
+          const sharedSnap = await getDoc(sharedDocRef);
+
+          if (sharedSnap.exists()) {
+            console.log("Firestore: Found shared data! Migrating to account...");
+            const sharedData = sharedSnap.data();
+            await setDoc(userDocRef, sharedData);
+            // After setting doc, the listener will take over
+          } else {
+            console.log("Firestore: No shared data found. Using local backup...");
+            const localData = {
+              plan: load('mp-plan', {}),
+              menu: load('mp-menu', []),
+              recipes: load('mp-recipes', []),
+              shopping: load('mp-shopping', []),
+              nextbites: load('mp-nextbites', []),
+            };
+            await setDoc(userDocRef, localData);
+          }
+        }
+
+        // Start live listener
+        unsub = onSnapshot(userDocRef, (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setPlan(data.plan || {});
+            setMenuItems(data.menu || []);
+            setRecipes(data.recipes || []);
+            setShoppingList(data.shopping || []);
+            setNextBites(data.nextbites || []);
+            setDestinations(data.destinations || []);
+            setMovies(data.movies || []);
+            setSeries(data.series || []);
+          }
+          setLoading(false);
+        }, (err) => {
+          console.error("Firestore: Sync Error:", err.message);
+          setLoading(false);
+        });
+      } catch (err) {
+        console.error("Firestore: Init Error:", err.message);
+        setLoading(false);
+      }
+    };
+
+    initializeData();
+
+    return () => {
+      if (unsub) {
+        console.log("Firestore: Cleaning up sync listener");
+        unsub();
+      }
+    };
+  }, [user]);
+
+  // Firestore update helpers
+  const updateFirebase = async (field, value) => {
+    if (!user) return;
+    try {
+      await setDoc(doc(db, 'users', user.uid), { [field]: value }, { merge: true });
+    } catch (err) {
+      console.error(`Firestore: Update failed for ${field}:`, err.message);
+    }
+  };
+
+  const handlePlanChange = (val) => {
+    const newVal = typeof val === 'function' ? val(plan) : val;
+    setPlan(newVal); updateFirebase('plan', newVal);
+  };
+  const handleMenuChange = (val) => {
+    const newVal = typeof val === 'function' ? val(menuItems) : val;
+    setMenuItems(newVal); updateFirebase('menu', newVal);
+  };
+  const handleRecipesChange = (val) => {
+    const newVal = typeof val === 'function' ? val(recipes) : val;
+    setRecipes(newVal); updateFirebase('recipes', newVal);
+  };
+  const handleShoppingChange = (val) => {
+    const newVal = typeof val === 'function' ? val(shoppingList) : val;
+    setShoppingList(newVal); updateFirebase('shopping', newVal);
+  };
+  const handleNextBitesChange = (val) => {
+    const newVal = typeof val === 'function' ? val(nextBites) : val;
+    setNextBites(newVal); updateFirebase('nextbites', newVal);
+  };
+  const handleDestinationsChange = (val) => {
+    const newVal = typeof val === 'function' ? val(destinations) : val;
+    setDestinations(newVal); updateFirebase('destinations', newVal);
+  };
+  const handleMoviesChange = (val) => {
+    const newVal = typeof val === 'function' ? val(movies) : val;
+    setMovies(newVal); updateFirebase('movies', newVal);
+  };
+  const handleSeriesChange = (val) => {
+    const newVal = typeof val === 'function' ? val(series) : val;
+    setSeries(newVal); updateFirebase('series', newVal);
+  };
+
+  const handleNavigateToBite = (name) => {
+    if (!name) return;
+    const cleanName = name.toLowerCase().trim();
+    console.log("App: Navigating to Next Bite card for:", cleanName);
+    
+    // Find the bite BEFORE switching tabs to ensure we have the ID
+    const bite = nextBites.find(b => 
+      b.name.toLowerCase().trim() === cleanName || 
+      b.name.toLowerCase().includes(cleanName) || 
+      cleanName.includes(b.name.toLowerCase())
+    );
+
+    setTab('nextbites');
+    setNextBitesSearch(name);
+    
+    if (bite) {
+      console.log("App: Found matching bite! Highlighting ID:", bite.id);
+      setHighlightedBiteId(bite.id);
+    } else {
+      console.warn("App: Could not find bite matching:", cleanName, "in current wishlist:", nextBites);
+    }
+    
+    // Scroll to top to ensure visibility
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handlePickerSelect = (name) => {
+    if (!pickerSlot) return;
+    const { weekKey, day, meal } = pickerSlot;
+    const weekData = plan[weekKey] || emptyWeek();
+    const currentVal = weekData[day]?.[meal] || '';
+    const dishes = currentVal ? currentVal.split(',').map(d => d.trim()).filter(Boolean) : [];
+
+    if (dishes.includes(name)) return; // Don't duplicate
+
+    const newVal = [...dishes, name].join(', ');
+
+    const newPlan = {
+      ...plan,
+      [weekKey]: {
+        ...weekData,
+        [day]: { ...weekData[day], [meal]: newVal }
+      }
+    };
+
+    handlePlanChange(newPlan);
+    // Don't close picker here, user might add more
+  };
+
+  return (
+    <div className="app-shell">
+      {loading && <LoadingOverlay />}
+      {!user ? <LoginScreen /> : (
+        <>
+
+      <header className="app-header">
+        <div className="header-brand">
+          <div className="header-logo-container">
+            <img src="/plan-bit-icon.jpg" alt="PlanBite Logo" className="header-logo-img" />
+          </div>
+          <div>
+            <h1 className="header-title">PlanBite</h1>
+            <div className="header-subtitle-row">
+              <p className="header-subtitle">Elegant kitchen companion</p>
+              <div className="sync-badge" title="Live Sync Active">
+                <div className="sync-dot"></div>
+                <span>Live</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="header-actions">
+          <button className="header-refresh-btn" onClick={toggleTheme} title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}>
+            {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+          </button>
+          <button className="header-refresh-btn" onClick={() => window.location.reload()} title="Sync Now">
+            <RotateCw size={18} />
+          </button>
+          <button className="header-refresh-btn" onClick={() => signOut(auth)} title="Sign Out">
+            <LogOut size={18} />
+          </button>
+          <div className="header-sparkle" title="PlanBite Sparkle">
+            <Sparkles size={18} />
+          </div>
+        </div>
+      </header>
+
+      {/* Content */}
+      <main className="app-main">
+        <AnimatePresence mode="wait">
+          {!loading && (
+            <motion.div key={tab}
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="tab-content">
+              {tab === 'planner' && <PlannerTab plan={plan} onPlanChange={handlePlanChange} menuItems={menuItems} onOpenPicker={setPickerSlot} onNavigateToBite={handleNavigateToBite} />}
+              {tab === 'menu' && <MenuTab menuItems={menuItems} setMenuItems={handleMenuChange} />}
+              {tab === 'recipes' && <RecipesTab recipes={recipes} setRecipes={handleRecipesChange} />}
+              {tab === 'shopping' && <ShoppingTab shoppingList={shoppingList} setShoppingList={handleShoppingChange} />}
+              {tab === 'nextbites' && <NextBitesTab bites={nextBites} setBites={handleNextBitesChange} initialSearch={nextBitesSearch} setInitialSearch={setNextBitesSearch} highlightedBiteId={highlightedBiteId} setHighlightedBiteId={setHighlightedBiteId} />}
+              {tab === 'plango' && <PlanGoTab destinations={destinations} setDestinations={handleDestinationsChange} />}
+              {tab === 'planwatch' && <PlanWatchTab movies={movies} setMovies={handleMoviesChange} series={series} setSeries={handleSeriesChange} />}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <MenuPicker
+          isOpen={!!pickerSlot}
+          onClose={() => setPickerSlot(null)}
+          menuItems={menuItems}
+          nextBites={nextBites}
+          onSelect={handlePickerSelect}
+          initialMode={pickerSlot?.initialMode}
+        />
+      </main>
+
+      {/* Bottom Nav */}
+      <nav className="bottom-nav">
+        {TABS.map(({ id, label, Icon }) => (
+          <button key={id} id={`nav-${id}`}
+            className={`nav-btn ${tab === id ? 'active' : ''}`}
+            onClick={() => setTab(id)}>
+            <div className="nav-icon-wrap"><Icon size={20} /></div>
+            <span>{label}</span>
+          </button>
+        ))}
+      </nav>
+        </>
+      )}
+    </div>
+  );
+}
