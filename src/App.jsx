@@ -2446,66 +2446,66 @@ export default function App() {
                       </div>
                       <div className="launcher-grid">
                         <motion.div 
-                          whileHover={{ scale: 1.04, y: -4 }}
+                          whileHover={{ scale: 1.03, y: -4 }}
                           whileTap={{ scale: 0.98 }}
-                          className="launcher-tile planbite-tile"
+                          className="launcher-card planbite-card"
                           onClick={() => { setActiveSection('PlanBite'); localStorage.setItem('activeSection', 'PlanBite'); }}
                         >
-                          <div className="tile-icon-wrap bg-bite">
-                            <img src="/plan-bit-icon.jpg" alt="" className="launcher-tile-img" />
+                          <div className="launcher-card-banner">
+                            <img src="/plan-bit-icon.jpg" alt="PlanBite" className="launcher-card-img" />
                           </div>
-                          <div className="tile-info">
-                            <h3 className="tile-title">PlanBite</h3>
-                            <p className="tile-desc">Meal Planner & Recipe Book</p>
-                            <span className="tile-action">Open Planner →</span>
+                          <div className="launcher-card-body">
+                            <h3 className="launcher-card-title">PlanBite</h3>
+                            <p className="launcher-card-desc">Meal Planner & Recipe Book</p>
+                            <span className="launcher-card-action">Open Planner →</span>
                           </div>
                         </motion.div>
 
                         <motion.div 
-                          whileHover={{ scale: 1.04, y: -4 }}
+                          whileHover={{ scale: 1.03, y: -4 }}
                           whileTap={{ scale: 0.98 }}
-                          className="launcher-tile planwatch-tile"
+                          className="launcher-card planwatch-card"
                           onClick={() => { setActiveSection('PlanWatch'); localStorage.setItem('activeSection', 'PlanWatch'); }}
                         >
-                          <div className="tile-icon-wrap bg-watch">
-                            <img src="/plan-watch-icon.jpg" alt="" className="launcher-tile-img" />
+                          <div className="launcher-card-banner">
+                            <img src="/plan-watch-icon.jpg" alt="PlanWatch" className="launcher-card-img" />
                           </div>
-                          <div className="tile-info">
-                            <h3 className="tile-title">PlanWatch</h3>
-                            <p className="tile-desc">Movies & Series Watchlist</p>
-                            <span className="tile-action">Open Watchlist →</span>
+                          <div className="launcher-card-body">
+                            <h3 className="launcher-card-title">PlanWatch</h3>
+                            <p className="launcher-card-desc">Movies & Series Watchlist</p>
+                            <span className="launcher-card-action">Open Watchlist →</span>
                           </div>
                         </motion.div>
 
                         <motion.div 
-                          whileHover={{ scale: 1.04, y: -4 }}
+                          whileHover={{ scale: 1.03, y: -4 }}
                           whileTap={{ scale: 0.98 }}
-                          className="launcher-tile plango-tile"
+                          className="launcher-card plango-card"
                           onClick={() => { setActiveSection('PlanGo'); localStorage.setItem('activeSection', 'PlanGo'); }}
                         >
-                          <div className="tile-icon-wrap bg-go">
-                            <Map size={36} />
+                          <div className="launcher-card-banner">
+                            <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80" alt="PlanGo" className="launcher-card-img" />
                           </div>
-                          <div className="tile-info">
-                            <h3 className="tile-title">PlanGo</h3>
-                            <p className="tile-desc">Travel Planner & Packing Checklist</p>
-                            <span className="tile-action">Open Travel →</span>
+                          <div className="launcher-card-body">
+                            <h3 className="launcher-card-title">PlanGo</h3>
+                            <p className="launcher-card-desc">Travel Planner & Packing Checklist</p>
+                            <span className="launcher-card-action">Open Travel →</span>
                           </div>
                         </motion.div>
 
                         <motion.div 
-                          whileHover={{ scale: 1.04, y: -4 }}
+                          whileHover={{ scale: 1.03, y: -4 }}
                           whileTap={{ scale: 0.98 }}
-                          className="launcher-tile plangym-tile"
+                          className="launcher-card plangym-card"
                           onClick={() => { setActiveSection('PlanFit'); localStorage.setItem('activeSection', 'PlanFit'); }}
                         >
-                          <div className="tile-icon-wrap bg-fit">
-                            <img src="/plan-gym-icon.jpg" alt="" className="launcher-tile-img" />
+                          <div className="launcher-card-banner">
+                            <img src="/plan-gym-icon.jpg" alt="PlanGym" className="launcher-card-img" />
                           </div>
-                          <div className="tile-info">
-                            <h3 className="tile-title">PlanGym</h3>
-                            <p className="tile-desc">Workout Planner & Training Analytics</p>
-                            <span className="tile-action">Open Workouts →</span>
+                          <div className="launcher-card-body">
+                            <h3 className="launcher-card-title">PlanGym</h3>
+                            <p className="launcher-card-desc">Workout Planner & Training Analytics</p>
+                            <span className="launcher-card-action">Open Workouts →</span>
                           </div>
                         </motion.div>
                       </div>
