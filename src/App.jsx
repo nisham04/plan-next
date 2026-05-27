@@ -1997,7 +1997,7 @@ export default function App() {
   const [nextBites, setNextBites] = useState([]);
   const [pickerSlot, setPickerSlot] = useState(null);
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
-  const [activeSection, setActiveSection] = useState(() => localStorage.getItem('activeSection') || 'launcher');
+  const [activeSection, setActiveSection] = useState('launcher');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [planWatchTab, setPlanWatchTab] = useState(() => localStorage.getItem('planWatchTab') || 'movies');
   const [movies, setMovies] = useState([]);
@@ -2346,7 +2346,7 @@ export default function App() {
                       className={`sidebar-nav-item ${activeSection === 'PlanBite' ? 'active' : ''}`}
                       onClick={() => { setActiveSection('PlanBite'); setSidebarOpen(false); }}
                     >
-                      <ChefHat size={22} />
+                      <img src="/plan-bit-icon.jpg" alt="" className="sidebar-nav-img" />
                       <span className="sidebar-nav-title">PlanBite</span>
                       {activeSection === 'PlanBite' && <div className="sidebar-active-indicator" />}
                     </button>
@@ -2355,7 +2355,7 @@ export default function App() {
                       className={`sidebar-nav-item ${activeSection === 'PlanWatch' ? 'active' : ''}`}
                       onClick={() => { setActiveSection('PlanWatch'); setSidebarOpen(false); }}
                     >
-                      <MonitorPlay size={22} />
+                      <img src="/plan-watch-icon.jpg" alt="" className="sidebar-nav-img" />
                       <span className="sidebar-nav-title">PlanWatch</span>
                       {activeSection === 'PlanWatch' && <div className="sidebar-active-indicator" />}
                     </button>
@@ -2364,7 +2364,7 @@ export default function App() {
                       className={`sidebar-nav-item ${activeSection === 'PlanGo' ? 'active' : ''}`}
                       onClick={() => { setActiveSection('PlanGo'); setSidebarOpen(false); }}
                     >
-                      <Map size={22} />
+                      <Map size={22} style={{ color: 'var(--text-3)' }} />
                       <span className="sidebar-nav-title">PlanGo</span>
                       {activeSection === 'PlanGo' && <div className="sidebar-active-indicator" />}
                     </button>
@@ -2373,7 +2373,7 @@ export default function App() {
                       className={`sidebar-nav-item ${activeSection === 'PlanFit' ? 'active' : ''}`}
                       onClick={() => { setActiveSection('PlanFit'); setSidebarOpen(false); }}
                     >
-                      <Dumbbell size={22} />
+                      <img src="/plan-gym-icon.jpg" alt="" className="sidebar-nav-img" />
                       <span className="sidebar-nav-title">PlanGym</span>
                       {activeSection === 'PlanFit' && <div className="sidebar-active-indicator" />}
                     </button>
@@ -2452,7 +2452,7 @@ export default function App() {
                           onClick={() => { setActiveSection('PlanBite'); localStorage.setItem('activeSection', 'PlanBite'); }}
                         >
                           <div className="tile-icon-wrap bg-bite">
-                            <ChefHat size={36} />
+                            <img src="/plan-bit-icon.jpg" alt="" className="launcher-tile-img" />
                           </div>
                           <div className="tile-info">
                             <h3 className="tile-title">PlanBite</h3>
@@ -2468,7 +2468,7 @@ export default function App() {
                           onClick={() => { setActiveSection('PlanWatch'); localStorage.setItem('activeSection', 'PlanWatch'); }}
                         >
                           <div className="tile-icon-wrap bg-watch">
-                            <MonitorPlay size={36} />
+                            <img src="/plan-watch-icon.jpg" alt="" className="launcher-tile-img" />
                           </div>
                           <div className="tile-info">
                             <h3 className="tile-title">PlanWatch</h3>
@@ -2500,7 +2500,7 @@ export default function App() {
                           onClick={() => { setActiveSection('PlanFit'); localStorage.setItem('activeSection', 'PlanFit'); }}
                         >
                           <div className="tile-icon-wrap bg-fit">
-                            <Dumbbell size={36} />
+                            <img src="/plan-gym-icon.jpg" alt="" className="launcher-tile-img" />
                           </div>
                           <div className="tile-info">
                             <h3 className="tile-title">PlanGym</h3>
