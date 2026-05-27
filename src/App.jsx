@@ -164,6 +164,7 @@ function LoadingOverlay() {
   return (
     <div className="loading-overlay">
       <div className="loading-content">
+        <img src="/app-icon.png" alt="PlanNext" className="loading-app-icon" />
         <div className="loading-spinner"></div>
         <p>Prep your plate. Roll your screen. Pack your bags. Build your strength.</p>
       </div>
