@@ -3519,14 +3519,9 @@ input[type=number] {
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
   width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
   box-sizing: border-box;
-}
-
-@media (min-width: 768px) {
-  .launcher-grid {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
-  }
 }
 
 .launcher-card {
