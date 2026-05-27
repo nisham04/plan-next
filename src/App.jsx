@@ -2364,7 +2364,7 @@ export default function App() {
                       className={`sidebar-nav-item ${activeSection === 'PlanGo' ? 'active' : ''}`}
                       onClick={() => { setActiveSection('PlanGo'); setSidebarOpen(false); }}
                     >
-                      <Map size={22} style={{ color: 'var(--text-3)' }} />
+                      <img src="/plan-go-icon.jpg" alt="" className="sidebar-nav-img" />
                       <span className="sidebar-nav-title">PlanGo</span>
                       {activeSection === 'PlanGo' && <div className="sidebar-active-indicator" />}
                     </button>
@@ -2401,7 +2401,7 @@ export default function App() {
                 </button>
               )}
               <div className="header-logo-container" style={{ marginLeft: 8 }}>
-                <img src={activeSection === 'PlanWatch' ? '/plan-watch-icon.jpg' : activeSection === 'PlanFit' ? '/plan-gym-icon.jpg' : '/plan-bit-icon.jpg'} alt="Logo" className="header-logo-img" />
+                <img src={activeSection === 'PlanWatch' ? '/plan-watch-icon.jpg' : activeSection === 'PlanFit' ? '/plan-gym-icon.jpg' : activeSection === 'PlanGo' ? '/plan-go-icon.jpg' : '/plan-bit-icon.jpg'} alt="Logo" className="header-logo-img" />
               </div>
               <div>
                 <h1 className="header-title">{activeSection === 'launcher' ? 'PlanNext' : activeSection === 'PlanFit' ? 'PlanGym' : activeSection}</h1>
@@ -2476,7 +2476,7 @@ export default function App() {
                           onClick={() => { setActiveSection('PlanGo'); localStorage.setItem('activeSection', 'PlanGo'); }}
                         >
                           <div className="launcher-card-banner">
-                            <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80" alt="PlanGo" className="launcher-card-img" />
+                            <img src="/plan-go-icon.jpg" alt="PlanGo" className="launcher-card-img" />
                           </div>
                           <h3 className="launcher-card-title">PlanGo</h3>
                         </motion.div>
