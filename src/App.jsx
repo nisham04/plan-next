@@ -165,7 +165,7 @@ function LoadingOverlay() {
     <div className="loading-overlay">
       <div className="loading-content">
         <div className="loading-spinner"></div>
-        <p>Prep your plate. Roll your screen. Pack your bags.</p>
+        <p>Prep your plate. Roll your screen. Pack your bags. Build your strength.</p>
       </div>
     </div>
   );
