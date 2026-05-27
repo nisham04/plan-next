@@ -210,10 +210,10 @@ function LoginScreen() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="auth-card">
         <div className="auth-header">
           <div className="auth-logo">
-            <ChefHat size={32} />
+            <img src="/app-icon.png" alt="PlanNext Logo" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} />
           </div>
           <h1 className="auth-title">PlanNext</h1>
-          <p className="auth-subtitle">{isSignUp ? 'Create your kitchen account' : 'Welcome back to your kitchen'}</p>
+          <p className="auth-subtitle">{isSignUp ? 'Create your PlanNext account' : 'Sign in to plan and live better'}</p>
         </div>
 
         <form className="auth-form" onSubmit={handleAuth}>
@@ -2401,7 +2401,7 @@ export default function App() {
                 </button>
               )}
               <div className="header-logo-container" style={{ marginLeft: 8 }}>
-                <img src={activeSection === 'PlanWatch' ? '/plan-watch-icon.jpg' : activeSection === 'PlanFit' ? '/plan-gym-icon.png' : activeSection === 'PlanGo' ? '/plan-go-icon.jpg' : '/plan-bit-icon.png'} alt="Logo" className="header-logo-img" />
+                <img src={activeSection === 'launcher' ? '/app-icon.png' : activeSection === 'PlanWatch' ? '/plan-watch-icon.jpg' : activeSection === 'PlanFit' ? '/plan-gym-icon.png' : activeSection === 'PlanGo' ? '/plan-go-icon.jpg' : '/plan-bit-icon.png'} alt="Logo" className="header-logo-img" />
               </div>
               <div>
                 <h1 className="header-title">{activeSection === 'launcher' ? 'PlanNext' : activeSection === 'PlanFit' ? 'PlanGym' : activeSection}</h1>

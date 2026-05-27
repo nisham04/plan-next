@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['plan-bit-icon.jpg', 'favicon.ico', 'mask-icon.svg'],
+      includeAssets: ['app-icon.png', 'app-icon.jpg', 'favicon.ico', 'mask-icon.svg'],
       manifest: {
         name: 'PlanNext',
         short_name: 'PlanNext',
@@ -16,9 +16,9 @@ export default defineConfig({
         theme_color: '#fffbf4',
         icons: [
           {
-            src: 'plan-bit-icon.jpg',
+            src: 'app-icon.png',
             sizes: '512x512',
-            type: 'image/jpeg',
+            type: 'image/png',
             purpose: 'any maskable'
           }
         ]
