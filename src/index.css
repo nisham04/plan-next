@@ -3547,6 +3547,29 @@ input[type=number] {
   border: 1.5px solid var(--border);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
+  background-size: cover;
+  background-position: center;
+}
+
+/* Beautiful color-matched blurred backdrop specific for each card */
+.planbite-card .launcher-card-banner { background-image: url('/plan-bit-icon.png'); }
+.planwatch-card .launcher-card-banner { background-image: url('/plan-watch-icon.jpg'); }
+.plango-card .launcher-card-banner { background-image: url('/plan-go-icon.jpg'); }
+.plangym-card .launcher-card-banner { background-image: url('/plan-gym-icon.png'); }
+
+.launcher-card-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: inherit;
+  background-size: inherit;
+  background-position: inherit;
+  filter: blur(12px) brightness(0.6);
+  transform: scale(1.15); /* Prevents white edges from blur */
+  z-index: 0;
 }
 
 .launcher-card:hover .launcher-card-banner {
@@ -3556,15 +3579,17 @@ input[type=number] {
 }
 
 .launcher-card-img {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: center 15%;
+  object-fit: contain; /* DO NOT ZOOM OR CROP - RENDER FULL IMAGE Lossless */
+  object-position: center;
   transition: transform 0.5s ease;
 }
 
 .launcher-card:hover .launcher-card-img {
-  transform: scale(1.04);
+  transform: scale(1.02); /* Very subtle elegant zoom feedback, no clipping */
 }
 
 .launcher-card-title {
@@ -3587,9 +3612,4 @@ input[type=number] {
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
-}
-
-/* PlanBite specific box style to prevent zoom/crop and focus on people */
-.planbite-card .launcher-card-img {
-  object-position: center 25%;
 }
