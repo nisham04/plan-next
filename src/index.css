@@ -3588,3 +3588,8 @@ input[type=number] {
   object-fit: cover;
   flex-shrink: 0;
 }
+
+/* PlanBite specific box style to prevent zoom/crop and focus on people */
+.planbite-card .launcher-card-img {
+  object-position: center 25%;
+}
