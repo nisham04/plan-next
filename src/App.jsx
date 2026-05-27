@@ -2401,7 +2401,7 @@ export default function App() {
                 </button>
               )}
               <div className="header-logo-container" style={{ marginLeft: 8 }}>
-                <img src={activeSection === 'PlanWatch' ? '/plan-watch-icon.jpg' : '/plan-bit-icon.jpg'} alt="Logo" className="header-logo-img" />
+                <img src={activeSection === 'PlanWatch' ? '/plan-watch-icon.jpg' : activeSection === 'PlanFit' ? '/plan-gym-icon.jpg' : '/plan-bit-icon.jpg'} alt="Logo" className="header-logo-img" />
               </div>
               <div>
                 <h1 className="header-title">{activeSection === 'launcher' ? 'PlanNext' : activeSection === 'PlanFit' ? 'PlanGym' : activeSection}</h1>
