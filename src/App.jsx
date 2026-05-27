@@ -2656,12 +2656,6 @@ function WatchCardLarge({ item, type, onEdit, onDelete, onToggleFavorite, onTogg
         <div className="watch-overlay-large" />
 
         <div className="watch-content-large">
-          {item.remarks && (
-            <div className="watch-remarks-top-content">
-              <Sparkles size={11} style={{ marginRight: 6, color: 'var(--primary)' }} />
-              <span>{item.remarks}</span>
-            </div>
-          )}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
             <div className="watch-title-large">{item.title}</div>
             <div style={{}}>
