@@ -2435,15 +2435,23 @@ export default function App() {
                   {activeSection === 'launcher' && (
                     <div className="launcher-container">
                       <div className="launcher-hero">
-                        <motion.h2 
-                          initial={{ opacity: 0, y: -10 }} 
-                          animate={{ opacity: 1, y: 0 }}
-                          className="launcher-greeting"
-                        >
-                          Welcome to PlanNext
-                        </motion.h2>
-                        <p className="launcher-subtitle">Select a planner to begin your day:</p>
-                      </div>
+                          <div className="launcher-brand-icons-row">
+                            <img src="/plan-bit-icon.png" alt="PlanBite" className="launcher-brand-avatar" />
+                            <img src="/plan-watch-icon.jpg" alt="PlanWatch" className="launcher-brand-avatar" />
+                            <img src="/plan-go-icon.jpg" alt="PlanGo" className="launcher-brand-avatar" />
+                            <img src="/plan-gym-icon.png" alt="PlanGym" className="launcher-brand-avatar" />
+                          </div>
+                          <motion.h2 
+                            initial={{ opacity: 0, y: -10 }} 
+                            animate={{ opacity: 1, y: 0 }}
+                            className="launcher-greeting"
+                          >
+                            Welcome to PlanNext
+                          </motion.h2>
+                          <p className="launcher-subtitle">
+                            Prep your plate. Roll your screen. Pack your bags. Build your strength.
+                          </p>
+                        </div>
                       <div className="launcher-grid">
                         <motion.div 
                           whileHover={{ scale: 1.03, y: -4 }}

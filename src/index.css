@@ -3615,3 +3615,29 @@ input[type=number] {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* Beautiful horizontal row displaying the 4 circular planner section icons above greeting */
+.launcher-brand-icons-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.launcher-brand-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: default;
+}
+
+.launcher-brand-avatar:hover {
+  transform: translateY(-3px);
+  border-color: var(--primary);
+  box-shadow: 0 8px 20px rgba(212, 180, 93, 0.2);
+}
