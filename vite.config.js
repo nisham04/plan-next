@@ -10,9 +10,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['plan-bit-icon.jpg', 'favicon.ico', 'mask-icon.svg'],
       manifest: {
-        name: 'PlanBite',
-        short_name: 'PlanBite',
-        description: 'Your elegant weekly meal planner',
+        name: 'PlanNext',
+        short_name: 'PlanNext',
+        description: 'Your elegant weekly planner',
         theme_color: '#fffbf4',
         icons: [
           {

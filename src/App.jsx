@@ -42,7 +42,6 @@ import {
   Tv,
   Film,
   MonitorPlay,
-  PlayCircle,
   User,
   Globe,
   Map,
@@ -212,7 +211,7 @@ function LoginScreen() {
           <div className="auth-logo">
             <ChefHat size={32} />
           </div>
-          <h1 className="auth-title">PlanBite</h1>
+          <h1 className="auth-title">PlanNext</h1>
           <p className="auth-subtitle">{isSignUp ? 'Create your kitchen account' : 'Welcome back to your kitchen'}</p>
         </div>
 
@@ -500,7 +499,7 @@ function MealSlot({ meal, value, onChange, menuItems, onOpenPicker, onNavigateTo
   );
 }
 
-// â”€â”€â”€ Day Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ———————————————————————————————————————————————————————————————————————————————— Day Card ————————————————————————————————————————————————————————————————————————————————
 
 function DayCard({ dayName, dayDate, meals, onMealChange, menuItems, onOpenPicker, onNavigateToBite }) {
   const todayFlag = dayDate && isToday(dayDate);
@@ -1982,6 +1981,8 @@ function MenuPicker({ isOpen, onClose, menuItems, nextBites, onSelect, initialMo
   );
 }
 
+
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -2011,6 +2012,8 @@ export default function App() {
   const [selectedWatchId, setSelectedWatchId] = useState(null);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const isExitingRef = useRef(false);
+
+
 
   useEffect(() => {
     const handlePopState = () => {
@@ -2285,8 +2288,9 @@ export default function App() {
   };
 
   return (
-    <div className="app-shell">
-      {(!isAuthChecked || (user && loading)) && <LoadingOverlay />}
+    <>
+      <div className="app-shell">
+        {(!isAuthChecked || (user && loading)) && <LoadingOverlay />}
       {!isAuthChecked ? null : !user ? <LoginScreen /> : (
         <>
           {/* Sidebar */}
@@ -2474,7 +2478,7 @@ export default function App() {
               setShowExitConfirm(false);
               window.history.go(-2); 
             }}
-            title="Exit PlanBite?"
+            title="Exit PlanNext?"
             message="Are you sure you want to exit the app?"
           />
 
@@ -2532,6 +2536,7 @@ export default function App() {
         </>
       )}
     </div>
+    </>
   );
 }
 
@@ -2608,21 +2613,26 @@ function WatchCardLarge({ item, type, onEdit, onDelete, onToggleFavorite, onTogg
 
           <div className="watch-footer-large">
             <button
-              className="watch-action-btn-large"
+              className={item.completed && type === 'series' ? "watch-main-btn-large" : "watch-action-btn-large"}
+              style={item.completed && type === 'series' ? { background: 'var(--bg-card2)', color: 'var(--text)', border: '1px solid var(--border)' } : {}}
               onClick={(e) => {
                 e.stopPropagation();
                 window.open(`https://www.google.com/search?q=${encodeURIComponent(item.title)}+${type === 'movies' ? 'movie' : 'series'}`, '_blank');
               }}
               title="Search on Google"
             >
-              <Globe size={24} />
+              <Globe size={item.completed && type === 'series' ? 20 : 24} />
+              {item.completed && type === 'series' && <span>Search on Google</span>}
             </button>
 
             {(!item.completed || type === 'movies') && (
               <button
                 className="watch-main-btn-large active"
                 style={{ background: 'var(--primary)', color: '#000' }}
-                onClick={type === 'movies' ? onDelete : onToggleComplete}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  type === 'movies' ? onDelete(e) : onToggleComplete(e);
+                }}
               >
                 <Check size={20} />
                 <span>Mark as Watched</span>
@@ -3077,13 +3087,14 @@ function PlanWatchTab({ type, items, setItems, selectedId, setSelectedId }) {
     if (type === 'movies') {
       handleDelete(id);
     } else {
-      setItems(items.map(i => i.id === id ? { ...i, completed: !i.completed } : i));
+      setItems(items.map(i => i.id === id ? { ...i, completed: !i.completed, lastModified: Date.now() } : i));
     }
   };
-  const handleToggleFavorite = (id) => setItems(items.map(i => i.id === id ? { ...i, favorite: !i.favorite } : i));
+  const handleToggleFavorite = (id) => setItems(items.map(i => i.id === id ? { ...i, favorite: !i.favorite, lastModified: Date.now() } : i));
   const handleDelete = (id) => setItems(items.filter(i => i.id !== id));
 
-  const allLangs = ['All', ...new Set(items.map(i => i.language).filter(Boolean))];
+  const currentViewItems = type === 'series' ? items.filter(i => view === 'to-watch' ? !i.completed : i.completed) : items;
+  const allLangs = ['All', ...new Set(currentViewItems.map(i => i.language).filter(Boolean))];
 
   const filtered = items.filter(i => {
     const matchesSearch = i.title.toLowerCase().includes(search.toLowerCase());
@@ -3102,13 +3113,15 @@ function PlanWatchTab({ type, items, setItems, selectedId, setSelectedId }) {
 
   const sortedFiltered = [...filtered].sort((a, b) => {
     if (sortBy === 'az') return a.title.localeCompare(b.title);
-    return (Number(b.id) || 0) - (Number(a.id) || 0); // Newer first
+    const timeA = a.lastModified || Number(a.id) || 0;
+    const timeB = b.lastModified || Number(b.id) || 0;
+    return timeB - timeA; // Newer first
   });
 
   const selectedSeries = type === 'series' && selectedId ? items.find(i => String(i.id) === String(selectedId)) : null;
 
   const handleUpdateSeries = (updatedSeries) => {
-    setItems(items.map(i => i.id === updatedSeries.id ? updatedSeries : i));
+    setItems(items.map(i => i.id === updatedSeries.id ? { ...updatedSeries, lastModified: Date.now() } : i));
   };
 
   useEffect(() => {
@@ -3150,11 +3163,26 @@ function PlanWatchTab({ type, items, setItems, selectedId, setSelectedId }) {
       <div className="tab-page-header">
         <div>
           <h2 className="tab-page-title">{type === 'movies' ? 'Movies' : 'Series'}</h2>
-          <p className="tab-page-sub">
-            {type === 'movies' ? `Watchlist : ${filtered.length} Movies` : (view === 'to-watch' ? `Watchlist : ${filtered.length} Series` : `Watched : ${filtered.length} Series`)}
-          </p>
+          {type === 'movies' && (
+            <p className="tab-page-sub">Watchlist : {items.length} Movies</p>
+          )}
+          {type === 'series' && view === 'to-watch' && (
+            <p className="tab-page-sub" style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)' }}>
+              {(() => {
+                const totalS = items.reduce((acc, item) => {
+                  if (!Array.isArray(item.seasons) || item.completed) return acc;
+                  return acc + item.seasons.filter(s => (s.episodes || []).length > 0 && (s.episodes || []).some(e => !e.watched)).length;
+                }, 0);
+                const totalE = items.reduce((acc, item) => {
+                  if (!Array.isArray(item.seasons) || item.completed) return acc;
+                  return acc + item.seasons.reduce((eAcc, s) => eAcc + (s.episodes || []).filter(e => !e.watched).length, 0);
+                }, 0);
+                return `${totalS} Seasons • ${totalE} Episodes`;
+              })()}
+            </p>
+          )}
           {type === 'series' && view === 'watched' && (
-            <p className="tab-page-sub" style={{ marginTop: 2, fontSize: 11, color: 'var(--text-3)' }}>
+            <p className="tab-page-sub" style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)' }}>
               {(() => {
                 const totalS = items.reduce((acc, item) => {
                   if (!Array.isArray(item.seasons)) return acc;
@@ -3164,7 +3192,7 @@ function PlanWatchTab({ type, items, setItems, selectedId, setSelectedId }) {
                   if (!Array.isArray(item.seasons)) return acc;
                   return acc + item.seasons.reduce((eAcc, s) => eAcc + (s.episodes || []).filter(e => e.watched).length, 0);
                 }, 0);
-                return `${totalS} Seasons - ${totalE} Episodes`;
+                return `${totalS} Seasons • ${totalE} Episodes`;
               })()}
             </p>
           )}
@@ -3209,23 +3237,9 @@ function PlanWatchTab({ type, items, setItems, selectedId, setSelectedId }) {
           {isLangsExpanded && (
             <div className="filter-tags-scroll expanded" style={{ marginTop: 10 }}>
               {allLangs
-                .filter(lang => {
-                  if (lang === 'All') return true;
-                  return items.some(i => {
-                    const matchesLang = i.language === lang;
-                    if (type === 'movies') return matchesLang;
-                    const matchesView = view === 'to-watch' ? !i.completed : i.completed;
-                    return matchesLang && matchesView;
-                  });
-                })
                 .map(lang => ({
                   name: lang,
-                  count: items.filter(i => {
-                    const matchesLang = lang === 'All' || i.language === lang;
-                    if (type === 'movies') return matchesLang;
-                    const matchesView = view === 'to-watch' ? !i.completed : i.completed;
-                    return matchesLang && matchesView;
-                  }).length
+                  count: currentViewItems.filter(i => lang === 'All' ? true : i.language === lang).length
                 }))
                 .sort((a, b) => {
                   if (a.name === 'All') return -1;
