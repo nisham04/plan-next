@@ -2621,6 +2621,14 @@ export default function App() {
 function WatchCardLarge({ item, type, onEdit, onDelete, onToggleFavorite, onToggleComplete, onClick, view }) {
   return (
     <div id={`watch-card-${item.id}`} className="watch-card-large" onClick={onClick}>
+      {item.remarks && (
+        <div className="watch-card-remarks-badge-container">
+          <div className="watch-card-remarks-badge" title={item.remarks}>
+            <Sparkles size={11} style={{ marginRight: 4, color: 'var(--primary)' }} />
+            <span>{item.remarks}</span>
+          </div>
+        </div>
+      )}
       {type === 'series' && view === 'watched' && Array.isArray(item.seasons) && item.seasons.length > 0 && item.seasons.some(s => (s.episodes || []).some(e => !e.watched)) && (
         <div className="not-finished-badge-container">
           <div className="not-finished-badge">Not Finished</div>
@@ -2648,6 +2656,12 @@ function WatchCardLarge({ item, type, onEdit, onDelete, onToggleFavorite, onTogg
         <div className="watch-overlay-large" />
 
         <div className="watch-content-large">
+          {item.remarks && (
+            <div className="watch-remarks-top-content">
+              <Sparkles size={11} style={{ marginRight: 6, color: 'var(--primary)' }} />
+              <span>{item.remarks}</span>
+            </div>
+          )}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
             <div className="watch-title-large">{item.title}</div>
             <div style={{}}>
@@ -2682,12 +2696,6 @@ function WatchCardLarge({ item, type, onEdit, onDelete, onToggleFavorite, onTogg
             {item.synopsis || item.note || 'No description available for this title.'}
           </div>
 
-          {item.remarks && (
-            <div className="watch-remarks-large">
-              <Sparkles size={10} style={{ marginRight: 6, color: 'var(--primary)' }} />
-              <span>{item.remarks}</span>
-            </div>
-          )}
 
           <div className="watch-footer-large">
             <button
