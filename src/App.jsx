@@ -57,6 +57,7 @@ import {
   Languages,
   Dumbbell,
   Activity,
+  LayoutGrid,
 } from 'lucide-react';
 
 // â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -1996,7 +1997,7 @@ export default function App() {
   const [nextBites, setNextBites] = useState([]);
   const [pickerSlot, setPickerSlot] = useState(null);
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
-  const [activeSection, setActiveSection] = useState(() => localStorage.getItem('activeSection') || 'PlanBite');
+  const [activeSection, setActiveSection] = useState(() => localStorage.getItem('activeSection') || 'launcher');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [planWatchTab, setPlanWatchTab] = useState(() => localStorage.getItem('planWatchTab') || 'movies');
   const [movies, setMovies] = useState([]);
@@ -2333,6 +2334,15 @@ export default function App() {
 
                   <div className="sidebar-content">
                     <button
+                      className={`sidebar-nav-item ${activeSection === 'launcher' ? 'active' : ''}`}
+                      onClick={() => { setActiveSection('launcher'); setSidebarOpen(false); }}
+                    >
+                      <LayoutGrid size={22} />
+                      <span className="sidebar-nav-title">Launchpad</span>
+                      {activeSection === 'launcher' && <div className="sidebar-active-indicator" />}
+                    </button>
+
+                    <button
                       className={`sidebar-nav-item ${activeSection === 'PlanBite' ? 'active' : ''}`}
                       onClick={() => { setActiveSection('PlanBite'); setSidebarOpen(false); }}
                     >
@@ -2364,7 +2374,7 @@ export default function App() {
                       onClick={() => { setActiveSection('PlanFit'); setSidebarOpen(false); }}
                     >
                       <Dumbbell size={22} />
-                      <span className="sidebar-nav-title">PlanFit</span>
+                      <span className="sidebar-nav-title">PlanGym</span>
                       {activeSection === 'PlanFit' && <div className="sidebar-active-indicator" />}
                     </button>
 
@@ -2385,13 +2395,18 @@ export default function App() {
               <button className="header-menu-btn" onClick={() => setSidebarOpen(true)}>
                 <Menu size={22} />
               </button>
+              {activeSection !== 'launcher' && (
+                <button className="header-menu-btn" onClick={() => { setActiveSection('launcher'); localStorage.setItem('activeSection', 'launcher'); }} title="Back to Launchpad" style={{ marginLeft: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <LayoutGrid size={18} />
+                </button>
+              )}
               <div className="header-logo-container" style={{ marginLeft: 8 }}>
-                <img src={activeSection === 'PlanBite' ? '/plan-bit-icon.jpg' : '/plan-watch-icon.jpg'} alt="Logo" className="header-logo-img" />
+                <img src={activeSection === 'PlanWatch' ? '/plan-watch-icon.jpg' : '/plan-bit-icon.jpg'} alt="Logo" className="header-logo-img" />
               </div>
               <div>
-                <h1 className="header-title">{activeSection}</h1>
+                <h1 className="header-title">{activeSection === 'launcher' ? 'PlanNext' : activeSection === 'PlanFit' ? 'PlanGym' : activeSection}</h1>
                 <div className="header-subtitle-row">
-                  <p className="header-subtitle">{activeSection === 'PlanBite' ? 'Plan. Cook. Eat. ' : activeSection === 'PlanGo' ? 'Plan. Pack. Go.' : activeSection === 'PlanFit' ? 'Plan. Train. Gain.' : 'Plan. Watch. Enjoy.'}</p>
+                  <p className="header-subtitle">{activeSection === 'PlanBite' ? 'Plan. Cook. Eat. ' : activeSection === 'PlanGo' ? 'Plan. Pack. Go.' : activeSection === 'PlanFit' ? 'Plan. Train. Gain.' : activeSection === 'PlanWatch' ? 'Plan. Watch. Enjoy.' : 'Your Personal Plan Suite.'}</p>
                   <div className="sync-badge">
                     <div className="sync-dot"></div>
                     <span>Live</span>
@@ -2413,10 +2428,89 @@ export default function App() {
           <main className="app-main">
             <AnimatePresence mode="wait">
               {!loading && (
-                <motion.div key={activeSection === 'PlanBite' ? tab : activeSection === 'PlanGo' ? 'plango' : planWatchTab}
+                <motion.div key={activeSection === 'PlanBite' ? `PlanBite-${tab}` : activeSection}
                   initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2, ease: 'easeOut' }}
                   className="tab-content">
+                  {activeSection === 'launcher' && (
+                    <div className="launcher-container">
+                      <div className="launcher-hero">
+                        <motion.h2 
+                          initial={{ opacity: 0, y: -10 }} 
+                          animate={{ opacity: 1, y: 0 }}
+                          className="launcher-greeting"
+                        >
+                          Welcome to PlanNext
+                        </motion.h2>
+                        <p className="launcher-subtitle">Select a planner to begin your day:</p>
+                      </div>
+                      <div className="launcher-grid">
+                        <motion.div 
+                          whileHover={{ scale: 1.04, y: -4 }}
+                          whileTap={{ scale: 0.98 }}
+                          className="launcher-tile planbite-tile"
+                          onClick={() => { setActiveSection('PlanBite'); localStorage.setItem('activeSection', 'PlanBite'); }}
+                        >
+                          <div className="tile-icon-wrap bg-bite">
+                            <ChefHat size={36} />
+                          </div>
+                          <div className="tile-info">
+                            <h3 className="tile-title">PlanBite</h3>
+                            <p className="tile-desc">Meal Planner & Recipe Book</p>
+                            <span className="tile-action">Open Planner →</span>
+                          </div>
+                        </motion.div>
+
+                        <motion.div 
+                          whileHover={{ scale: 1.04, y: -4 }}
+                          whileTap={{ scale: 0.98 }}
+                          className="launcher-tile planwatch-tile"
+                          onClick={() => { setActiveSection('PlanWatch'); localStorage.setItem('activeSection', 'PlanWatch'); }}
+                        >
+                          <div className="tile-icon-wrap bg-watch">
+                            <MonitorPlay size={36} />
+                          </div>
+                          <div className="tile-info">
+                            <h3 className="tile-title">PlanWatch</h3>
+                            <p className="tile-desc">Movies & Series Watchlist</p>
+                            <span className="tile-action">Open Watchlist →</span>
+                          </div>
+                        </motion.div>
+
+                        <motion.div 
+                          whileHover={{ scale: 1.04, y: -4 }}
+                          whileTap={{ scale: 0.98 }}
+                          className="launcher-tile plango-tile"
+                          onClick={() => { setActiveSection('PlanGo'); localStorage.setItem('activeSection', 'PlanGo'); }}
+                        >
+                          <div className="tile-icon-wrap bg-go">
+                            <Map size={36} />
+                          </div>
+                          <div className="tile-info">
+                            <h3 className="tile-title">PlanGo</h3>
+                            <p className="tile-desc">Travel Planner & Packing Checklist</p>
+                            <span className="tile-action">Open Travel →</span>
+                          </div>
+                        </motion.div>
+
+                        <motion.div 
+                          whileHover={{ scale: 1.04, y: -4 }}
+                          whileTap={{ scale: 0.98 }}
+                          className="launcher-tile plangym-tile"
+                          onClick={() => { setActiveSection('PlanFit'); localStorage.setItem('activeSection', 'PlanFit'); }}
+                        >
+                          <div className="tile-icon-wrap bg-fit">
+                            <Dumbbell size={36} />
+                          </div>
+                          <div className="tile-info">
+                            <h3 className="tile-title">PlanGym</h3>
+                            <p className="tile-desc">Workout Planner & Training Analytics</p>
+                            <span className="tile-action">Open Workouts →</span>
+                          </div>
+                        </motion.div>
+                      </div>
+                    </div>
+                  )}
                   {activeSection === 'PlanBite' && (
                     <>
                       {tab === 'planner' && <PlannerTab plan={plan} onPlanChange={handlePlanChange} menuItems={menuItems} onOpenPicker={setPickerSlot} onNavigateToBite={handleNavigateToBite} />}
@@ -2487,7 +2581,7 @@ export default function App() {
             <nav className="bottom-nav">
               <button className={`nav-btn ${planFitTab === 'planner' ? 'active' : ''}`} onClick={() => setPlanFitTab('planner')}>
                 <div className="nav-icon-wrap"><Dumbbell size={20} /></div>
-                <span>Fit Planner</span>
+                <span>Gym Planner</span>
               </button>
               <button className={`nav-btn ${planFitTab === 'dashboard' ? 'active' : ''}`} onClick={() => setPlanFitTab('dashboard')}>
                 <div className="nav-icon-wrap"><Activity size={20} /></div>

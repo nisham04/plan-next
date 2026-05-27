@@ -3465,3 +3465,128 @@ input[type=number] {
   background: rgba(255, 215, 0, 0.2);
   transform: scale(1.1);
 }
+
+/* Launcher Dashboard (PlanNext Launchpad) */
+.launcher-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  min-height: calc(100vh - 140px);
+}
+
+.launcher-hero {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.launcher-greeting {
+  font-size: 32px;
+  font-weight: 800;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, #fff 0%, var(--primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.5px;
+}
+
+.light-mode .launcher-greeting {
+  background: linear-gradient(135deg, #111827 0%, var(--primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.launcher-subtitle {
+  font-size: 16px;
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+.launcher-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  width: 100%;
+}
+
+.launcher-tile {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.launcher-tile:hover {
+  border-color: var(--primary);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+}
+
+.tile-icon-wrap {
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.bg-bite {
+  background: rgba(212, 180, 93, 0.15);
+  color: #d4b45d;
+}
+
+.bg-watch {
+  background: rgba(168, 85, 247, 0.15);
+  color: #a855f7;
+}
+
+.bg-go {
+  background: rgba(45, 212, 191, 0.15);
+  color: #2dd4bf;
+}
+
+.bg-fit {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+}
+
+.tile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tile-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.tile-desc {
+  font-size: 14px;
+  color: var(--text-2);
+  line-height: 1.4;
+}
+
+.tile-action {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-top: 8px;
+  transition: transform 0.2s ease;
+}
+
+.launcher-tile:hover .tile-action {
+  transform: translateX(4px);
+}
