@@ -2454,11 +2454,7 @@ export default function App() {
                           <div className="launcher-card-banner">
                             <img src="/plan-bit-icon.jpg" alt="PlanBite" className="launcher-card-img" />
                           </div>
-                          <div className="launcher-card-body">
-                            <h3 className="launcher-card-title">PlanBite</h3>
-                            <p className="launcher-card-desc">Meal Planner & Recipe Book</p>
-                            <span className="launcher-card-action">Open Planner →</span>
-                          </div>
+                          <h3 className="launcher-card-title">PlanBite</h3>
                         </motion.div>
 
                         <motion.div 
@@ -2470,11 +2466,7 @@ export default function App() {
                           <div className="launcher-card-banner">
                             <img src="/plan-watch-icon.jpg" alt="PlanWatch" className="launcher-card-img" />
                           </div>
-                          <div className="launcher-card-body">
-                            <h3 className="launcher-card-title">PlanWatch</h3>
-                            <p className="launcher-card-desc">Movies & Series Watchlist</p>
-                            <span className="launcher-card-action">Open Watchlist →</span>
-                          </div>
+                          <h3 className="launcher-card-title">PlanWatch</h3>
                         </motion.div>
 
                         <motion.div 
@@ -2486,11 +2478,7 @@ export default function App() {
                           <div className="launcher-card-banner">
                             <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80" alt="PlanGo" className="launcher-card-img" />
                           </div>
-                          <div className="launcher-card-body">
-                            <h3 className="launcher-card-title">PlanGo</h3>
-                            <p className="launcher-card-desc">Travel Planner & Packing Checklist</p>
-                            <span className="launcher-card-action">Open Travel →</span>
-                          </div>
+                          <h3 className="launcher-card-title">PlanGo</h3>
                         </motion.div>
 
                         <motion.div 
@@ -2502,11 +2490,7 @@ export default function App() {
                           <div className="launcher-card-banner">
                             <img src="/plan-gym-icon.jpg" alt="PlanGym" className="launcher-card-img" />
                           </div>
-                          <div className="launcher-card-body">
-                            <h3 className="launcher-card-title">PlanGym</h3>
-                            <p className="launcher-card-desc">Workout Planner & Training Analytics</p>
-                            <span className="launcher-card-action">Open Workouts →</span>
-                          </div>
+                          <h3 className="launcher-card-title">PlanGym</h3>
                         </motion.div>
                       </div>
                     </div>
