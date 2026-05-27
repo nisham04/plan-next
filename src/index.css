@@ -3507,10 +3507,8 @@ input[type=number] {
   font-weight: 500;
 }
 
-/* Image rendering contrast enhancements for custom logos */
+/* Image rendering enhancements for custom logos */
 .header-logo-img, .sidebar-nav-img, .launcher-card-img {
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
   object-fit: cover;
 }
 
