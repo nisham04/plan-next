@@ -2396,14 +2396,7 @@ export default function App() {
               <button className="header-menu-btn" onClick={() => setSidebarOpen(true)}>
                 <Menu size={22} />
               </button>
-              {activeSection !== 'launcher' && (
-                <button className="header-menu-btn" onClick={() => { setActiveSection('launcher'); localStorage.setItem('activeSection', 'launcher'); }} title="Back to Launchpad" style={{ marginLeft: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <LayoutGrid size={18} />
-                </button>
-              )}
-              <div className="header-logo-container" style={{ marginLeft: 8 }}>
-                <img src={activeSection === 'launcher' ? '/app-icon.png' : activeSection === 'PlanWatch' ? '/plan-watch-icon.jpg' : activeSection === 'PlanFit' ? '/plan-gym-icon.png' : activeSection === 'PlanGo' ? '/plan-go-icon.jpg' : '/plan-bit-icon.png'} alt="Logo" className="header-logo-img" />
-              </div>
+
               <div>
                 <h1 className="header-title">{activeSection === 'launcher' ? 'PlanNext' : activeSection === 'PlanFit' ? 'PlanGym' : activeSection}</h1>
                 <div className="header-subtitle-row">
@@ -2450,7 +2443,7 @@ export default function App() {
                             Welcome to PlanNext
                           </motion.h2>
                           <p className="launcher-subtitle">
-                            Prep your plate. Roll your screen. Pack your bags. Build your strength.
+                            Prep your plate. Roll your screen.<br />Pack your bags. Build your strength.
                           </p>
                         </div>
                       <div className="launcher-grid">
