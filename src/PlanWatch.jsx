@@ -45,9 +45,12 @@ function SeriesCard({ series, onEdit, onDelete, onToggleFavorite, onToggleComple
       </div>
       <div className="card-main-content">
         <div className="recipe-card-top">
-          <div className="recipe-domain">
+          <div className="recipe-domain" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <Tv size={12} style={{ marginRight: 4 }} />
-            {series.seasons || '1'} Seasons
+            <span>{series.seasons || '1'} Seasons</span>
+            {series.status === 'ongoing' && (
+              <span className="watch-tag" style={{ background: '#000000', color: '#ffd700', border: '1px solid #ffd700', fontSize: '9px', fontWeight: '900', padding: '2px 6px', borderRadius: '6px', textTransform: 'uppercase' }}>Ongoing</span>
+            )}
           </div>
           <div className="card-actions-row">
             <button className={`recipe-favorite-btn ${series.favorite ? 'active' : ''}`} onClick={onToggleFavorite}>
@@ -73,6 +76,7 @@ function AddWatchItemForm({ onSubmit, initialData, type }) {
   const [title, setTitle] = useState(initialData?.title || '');
   const [extra, setExtra] = useState(type === 'movies' ? (initialData?.year || '') : (initialData?.seasons || ''));
   const [note, setNote] = useState(initialData?.note || '');
+  const [status, setStatus] = useState(initialData?.status || 'completed');
 
   return (
     <form className="add-recipe-form" onSubmit={(e) => {
@@ -80,6 +84,7 @@ function AddWatchItemForm({ onSubmit, initialData, type }) {
       onSubmit({
         title,
         note,
+        status,
         [type === 'movies' ? 'year' : 'seasons']: extra,
         updatedAt: Date.now()
       });
@@ -96,6 +101,29 @@ function AddWatchItemForm({ onSubmit, initialData, type }) {
         <label>Personal Note / Thoughts</label>
         <textarea className="meal-slot-input" style={{ height: 80, padding: 12 }} value={note} onChange={e => setNote(e.target.value)} placeholder="What did you think of it?" />
       </div>
+      {type === 'series' && initialData && (
+        <div className="auth-input-group" style={{ marginBottom: 25 }}>
+          <label style={{ display: 'block', marginBottom: 8, fontWeight: 700 }}>Series Status</label>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button
+              type="button"
+              className={`sort-pill ${status === 'ongoing' ? 'active' : ''}`}
+              onClick={() => setStatus('ongoing')}
+              style={{ flex: 1, padding: '12px', justifyContent: 'center', margin: 0 }}
+            >
+              Ongoing
+            </button>
+            <button
+              type="button"
+              className={`sort-pill ${status === 'completed' ? 'active' : ''}`}
+              onClick={() => setStatus('completed')}
+              style={{ flex: 1, padding: '12px', justifyContent: 'center', margin: 0 }}
+            >
+              Completed
+            </button>
+          </div>
+        </div>
+      )}
       <button type="submit" className="auth-btn">
         {initialData ? 'Update Item' : 'Add to List'}
       </button>
@@ -109,6 +137,7 @@ function PlanWatchTab({ type, items, setItems }) {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [filterOngoing, setFilterOngoing] = useState(false);
 
   const handleAdd = (data) => {
     const newItem = { id: Date.now(), ...data, completed: false, favorite: false };
@@ -133,9 +162,12 @@ function PlanWatchTab({ type, items, setItems }) {
 
   const filtered = items.filter(i => {
     const matchesSearch = i.title.toLowerCase().includes(search.toLowerCase());
+    const matchesOngoing = !filterOngoing || (
+      type === 'series' && i.status === 'ongoing'
+    );
     if (type === 'movies') return matchesSearch; // No 'watched' state for movies, they just get deleted
     const matchesView = view === 'to-watch' ? !i.completed : i.completed;
-    return matchesSearch && matchesView;
+    return matchesSearch && matchesView && matchesOngoing;
   });
 
   const favorites = items.filter(i => i.favorite);
@@ -168,6 +200,30 @@ function PlanWatchTab({ type, items, setItems }) {
           </button>
           <button className={`sub-nav-btn ${view === 'watched' ? 'active' : ''}`} onClick={() => setView('watched')}>
             Watched ({items.filter(i => i.completed).length})
+          </button>
+        </div>
+      )}
+
+      {type === 'series' && (
+        <div className="sort-pills-container" style={{ display: 'flex', gap: 10, marginBottom: 20, padding: '0 4px', overflowX: 'auto', whiteSpace: 'nowrap' }}>
+          <button
+            className={`sort-pill ${filterOngoing ? 'active' : ''}`}
+            onClick={() => setFilterOngoing(!filterOngoing)}
+            style={{
+              padding: '6px 14px',
+              background: filterOngoing ? 'var(--primary)' : 'var(--bg-card2)',
+              color: filterOngoing ? '#000' : 'var(--text-3)',
+              border: '1px solid var(--border)',
+              borderRadius: '20px',
+              fontSize: '11px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6
+            }}
+          >
+            <span>Ongoing</span>
           </button>
         </div>
       )}

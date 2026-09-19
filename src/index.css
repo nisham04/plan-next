@@ -1892,10 +1892,10 @@ select.form-input { -webkit-appearance: none; appearance: none; cursor: pointer;
   font-weight: 600;
   color: var(--text);
   text-transform: capitalize;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
   display: block;
+  line-height: 1.35;
 }
 
 .recipe-domain {
@@ -2697,13 +2697,13 @@ select.form-input { -webkit-appearance: none; appearance: none; cursor: pointer;
   background: #000;
   box-shadow: 0 20px 50px rgba(0,0,0,0.6);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1.5px solid #916E1B;
 }
 
 .watch-card-large:hover {
   transform: translateY(-8px) scale(1.02);
   box-shadow: 0 30px 60px rgba(0,0,0,0.8);
-  border-color: var(--primary-glow);
+  border-color: #d4af37;
 }
 
 .watch-tab-page .watch-card-large {
@@ -2778,14 +2778,14 @@ select.form-input { -webkit-appearance: none; appearance: none; cursor: pointer;
 }
 
 .not-finished-badge {
-  background: var(--primary);
+  background: #916E1B;
   color: #000;
   font-size: 10px;
   font-weight: 900;
   padding: 5px 12px;
   border-radius: 10px;
   text-transform: uppercase;
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 15px rgba(145, 110, 27, 0.3);
   letter-spacing: 0.5px;
 }
 
@@ -2805,7 +2805,7 @@ select.form-input { -webkit-appearance: none; appearance: none; cursor: pointer;
   font-weight: 800;
   letter-spacing: -0.5px;
   line-height: 1.2;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   text-shadow: 0 2px 10px rgba(0,0,0,0.5);
 }
 
@@ -2813,7 +2813,7 @@ select.form-input { -webkit-appearance: none; appearance: none; cursor: pointer;
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 6px;
   font-size: 14px;
   font-weight: 700;
   color: rgba(255,255,255,0.7);
@@ -2837,7 +2837,7 @@ select.form-input { -webkit-appearance: none; appearance: none; cursor: pointer;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  margin-bottom: 24px;
+  margin-bottom: 6px;
 }
 
 .watch-remarks-large {
@@ -2845,11 +2845,11 @@ select.form-input { -webkit-appearance: none; appearance: none; cursor: pointer;
   align-items: center;
   gap: 8px;
   padding: 10px 14px;
-  background: rgba(212,180,93,0.15);
-  border: 1px solid rgba(212,180,93,0.3);
+  background: rgba(145,110,27,0.15);
+  border: 1px solid rgba(145,110,27,0.3);
   border-radius: 14px;
   margin-bottom: 24px;
-  color: #d4b45d;
+  color: #916E1B;
   font-size: 13px;
   font-weight: 600;
 }
@@ -3027,6 +3027,60 @@ select.form-input { -webkit-appearance: none; appearance: none; cursor: pointer;
   box-shadow: 0 4px 12px var(--primary-glow);
 }
 
+/* ─── Recipe Category Filter Bar ────────────────────────────────────────── */
+.recipe-category-bar {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 0 0 10px 0;
+  margin-bottom: 4px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  flex-shrink: 0;
+}
+.recipe-category-bar::-webkit-scrollbar { display: none; }
+
+/* Count badge inside category pill */
+.cat-pill-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 800;
+  background: rgba(0,0,0,0.15);
+  color: inherit;
+  line-height: 1;
+}
+.sort-pill.active .cat-pill-count {
+  background: rgba(0,0,0,0.2);
+}
+
+/* Small badge on recipe card */
+.recipe-category-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.recipe-category-badge {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  background: color-mix(in srgb, var(--primary) 15%, transparent);
+  color: var(--primary);
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
 /* ─── PlanGo Dashboard ───────────────────────────────────────────────────── */
 .dashboard-hero {
   position: relative;
@@ -3159,6 +3213,55 @@ select.form-input { -webkit-appearance: none; appearance: none; cursor: pointer;
 .dash-card:hover {
   border-color: var(--primary-glow);
   transform: translateY(-2px);
+}
+
+.dash-card-checkbox {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid var(--text-3);
+  background: transparent;
+  color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0;
+  margin-right: -2px;
+}
+
+.dash-card-checkbox:hover {
+  border-color: var(--primary);
+  background: var(--primary-dim);
+}
+
+.dash-card-checkbox.checked {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #000;
+  box-shadow: 0 0 10px var(--primary-glow);
+}
+
+.dash-card-checkbox svg {
+  opacity: 0;
+  transform: scale(0.6);
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dash-card-checkbox.checked svg {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.dash-card.completed {
+  border-color: var(--border-subtle);
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.light-mode .dash-card.completed {
+  background: rgba(0, 0, 0, 0.01);
 }
 
 .dash-card-icon {

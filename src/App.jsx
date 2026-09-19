@@ -618,8 +618,8 @@ function ActionMenu({ onEdit, onDelete, onVisited, isVisited, onRemark, visitedL
 
   return (
     <div className="action-menu-container" ref={menuRef} style={{ zIndex: isOpen ? 9999 : 100, position: 'relative', width: '100%', height: '100%' }}>
-      <button className="action-menu-trigger" onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }} style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <MoreVertical size={20} />
+      <button className="action-menu-trigger" onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }} style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', padding: 0, border: 'none' }}>
+        <MoreVertical size={24} />
       </button>
       <AnimatePresence>
         {isOpen && (
@@ -888,16 +888,50 @@ function MenuTab({ menuItems, setMenuItems }) {
 
 // â”€â”€â”€ Recipes Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+
+const FOOD_TYPES = [
+  { id: 'veg',    label: 'Veg',      color: '#5a8a6a' },
+  { id: 'egg',    label: 'Egg',      color: '#9a8040' },
+  { id: 'nonveg', label: 'Non-Veg',  color: '#9a5550' },
+];
+
+function FoodTypeSymbol({ type }) {
+  const ft = FOOD_TYPES.find(f => f.id === (type || 'veg'));
+  const color = ft?.color || '#0f8a45';
+  return (
+    <div title={ft?.label || 'Veg'} style={{
+      width: 16, height: 16,
+      border: `2px solid ${color}`,
+      borderRadius: 3,
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    }}>
+      <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: color }} />
+    </div>
+  );
+}
+
 function AddRecipeForm({ onSubmit, initialData }) {
   const [name, setName] = useState(initialData?.name || '');
   const [url, setUrl] = useState(initialData?.url || '');
   const [note, setNote] = useState(initialData?.note || '');
+  const [category, setCategory] = useState(initialData?.category || '');
+  const [foodType, setFoodType] = useState(initialData?.foodType || 'veg');
+  const [ingredientsText, setIngredientsText] = useState(
+    Array.isArray(initialData?.ingredients) ? initialData.ingredients.join('\n') : ''
+  );
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!name.trim()) return;
-    onSubmit({ name: titleCase(name.trim()), url: url.trim(), note: note.trim() });
-    if (!initialData) { setName(''); setUrl(''); setNote(''); }
+    const ingredients = ingredientsText
+      .split('\n')
+      .map(i => i.trim())
+      .filter(Boolean);
+    onSubmit({ name: titleCase(name.trim()), url: url.trim(), note: note.trim(), category: category.trim(), foodType, ingredients });
+    if (!initialData) { setName(''); setUrl(''); setNote(''); setCategory(''); setFoodType('veg'); setIngredientsText(''); }
   };
 
   return (
@@ -906,22 +940,61 @@ function AddRecipeForm({ onSubmit, initialData }) {
         <input className="form-input" value={name} onChange={e => setName(e.target.value)}
           placeholder="e.g. Butter Chicken" maxLength={60} required />
       </FormField>
+      <FormField label="Dietary Type">
+        <div style={{ display: 'flex', gap: 8 }}>
+          {FOOD_TYPES.map(ft => (
+            <button
+              key={ft.id}
+              type="button"
+              onClick={() => setFoodType(ft.id)}
+              style={{
+                flex: 1,
+                padding: '10px 6px',
+                borderRadius: 12,
+                border: `2px solid ${foodType === ft.id ? ft.color : 'var(--border)'}`,
+                background: foodType === ft.id ? `${ft.color}18` : 'var(--bg-card2)',
+                color: foodType === ft.id ? ft.color : 'var(--text-3)',
+                fontWeight: 700,
+                fontSize: 13,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                transition: 'all 0.18s',
+                cursor: 'pointer',
+              }}
+            >
+              <FoodTypeSymbol type={ft.id} />
+              {ft.label}
+            </button>
+          ))}
+        </div>
+      </FormField>
+      <FormField label="Category (optional)">
+        <input className="form-input" value={category} onChange={e => setCategory(e.target.value)}
+          placeholder="e.g. Dinner, Snack, Vegan..." maxLength={30} />
+      </FormField>
+      <FormField label="Ingredients (optional, one per line)">
+        <textarea className="form-input form-textarea" value={ingredientsText} onChange={e => setIngredientsText(e.target.value)}
+          placeholder="500g Chicken&#10;1 tbsp Butter&#10;Salt to taste..." rows={3} />
+      </FormField>
       <FormField label="Recipe Link (optional)">
         <input className="form-input" value={url} onChange={e => setUrl(e.target.value)}
           placeholder="https://..." type="url" />
       </FormField>
       <FormField label="Notes (optional)">
         <textarea className="form-input form-textarea" value={note} onChange={e => setNote(e.target.value)}
-          placeholder="Any tips or variations..." rows={3} />
+          placeholder="Any tips or variations..." rows={2} />
       </FormField>
       <button type="submit" className="btn-primary" disabled={!name.trim()}>Save Recipe</button>
     </form>
   );
 }
 
-function RecipeCard({ recipe, onEdit, onDelete, onToggleFavorite, dragControls }) {
+function RecipeCard({ recipe, onEdit, onDelete, onToggleFavorite, onOpenIngredients, dragControls }) {
   const favicon = recipe.url ? getFaviconUrl(recipe.url) : null;
   const domain = recipe.url ? (() => { try { return new URL(recipe.url.startsWith('http') ? recipe.url : 'https://' + recipe.url).hostname.replace('www.', ''); } catch { return null; } })() : null;
+  const hasNotes = Boolean(recipe.ingredientsNotes || (Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0));
 
   return (
     <motion.div layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="recipe-card">
@@ -938,21 +1011,50 @@ function RecipeCard({ recipe, onEdit, onDelete, onToggleFavorite, dragControls }
             <div className="recipe-favicon-placeholder"><BookOpen size={16} /></div>
           )}
           <div className="recipe-info">
-            <h4 className="recipe-name">{recipe.name}</h4>
+            <h4 className="recipe-name" style={{ margin: 0 }}>
+              {recipe.name}
+              <span style={{ display: 'inline-flex', verticalAlign: 'middle', marginLeft: 5, position: 'relative', top: '-1px' }}>
+                <FoodTypeSymbol type={recipe.foodType} />
+              </span>
+            </h4>
             {domain && <span className="recipe-domain">{domain}</span>}
           </div>
-          <div className="recipe-actions">
-            <button className={`bite-action-btn recipe-favorite-btn ${recipe.favourite ? 'active' : ''}`}
-              onClick={() => onToggleFavorite(recipe.id)} title="Favorite">
-              <Star size={16} fill={recipe.favourite ? "currentColor" : "none"} />
+          <div className="recipe-actions" style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 32px)',
+            gap: '4px',
+            flexShrink: 0,
+            alignSelf: 'flex-start'
+          }}>
+            <button
+              className="bite-action-btn recipe-ingredients-icon-btn"
+              onClick={() => onOpenIngredients(recipe)}
+              title="Open Recipe Notepad / Notes"
+              style={{ width: 32, height: 32, color: hasNotes ? 'var(--primary)' : 'var(--text-dim)' }}
+            >
+              <UtensilsCrossed size={15} />
             </button>
-            {recipe.url && (
-              <a href={recipe.url.startsWith('http') ? recipe.url : 'https://' + recipe.url}
-                target="_blank" rel="noopener noreferrer" className="bite-action-btn recipe-link-btn" title="Recipe Link">
-                <ExternalLink size={16} />
+            <button
+              className={`bite-action-btn recipe-favorite-btn ${recipe.favourite ? 'active' : ''}`}
+              onClick={() => onToggleFavorite(recipe.id)}
+              title="Favorite"
+              style={{ width: 32, height: 32 }}
+            >
+              <Star size={15} fill={recipe.favourite ? "currentColor" : "none"} />
+            </button>
+            {recipe.url ? (
+              <a
+                href={recipe.url.startsWith('http') ? recipe.url : 'https://' + recipe.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bite-action-btn recipe-link-btn"
+                title="Recipe Link"
+                style={{ width: 32, height: 32 }}
+              >
+                <ExternalLink size={15} />
               </a>
-            )}
-            <div className="bite-action-btn-menu">
+            ) : <div style={{ width: 32, height: 32 }} />}
+            <div className="bite-action-btn-menu" style={{ width: 32, height: 32 }}>
               <ActionMenu onEdit={onEdit} onDelete={onDelete} />
             </div>
           </div>
@@ -963,7 +1065,7 @@ function RecipeCard({ recipe, onEdit, onDelete, onToggleFavorite, dragControls }
   );
 }
 
-function DraggableRecipeWrapper({ recipe, onEdit, onDelete, onToggleFavorite }) {
+function DraggableRecipeWrapper({ recipe, onEdit, onDelete, onToggleFavorite, onOpenIngredients }) {
   const controls = useDragControls();
   return (
     <Reorder.Item value={recipe} id={recipe.id} dragListener={false} dragControls={controls} style={{ listStyle: 'none' }}>
@@ -972,21 +1074,248 @@ function DraggableRecipeWrapper({ recipe, onEdit, onDelete, onToggleFavorite }) 
         onEdit={onEdit}
         onDelete={onDelete}
         onToggleFavorite={onToggleFavorite}
+        onOpenIngredients={onOpenIngredients}
         dragControls={controls}
       />
     </Reorder.Item>
   );
 }
 
-function RecipesTab({ recipes, setRecipes }) {
+function parseSimpleMarkdown(text) {
+  if (!text) return '';
+  const lines = text.split('\n');
+  const htmlLines = lines.map(line => {
+    let l = line;
+    if (/^\s*-\s*\[\s*\]\s+(.*)/.test(l)) {
+      const content = l.replace(/^\s*-\s*\[\s*\]\s+/, '');
+      return `<div style="display:flex;align-items:center;gap:8px;margin:5px 0;"><span style="display:inline-block;width:14px;height:14px;border:1.5px solid var(--border);border-radius:4px;"></span><span>${formatInlineMarkup(content)}</span></div>`;
+    }
+    if (/^\s*-\s*\[[xX]\]\s+(.*)/.test(l)) {
+      const content = l.replace(/^\s*-\s*\[[xX]\]\s+/, '');
+      return `<div style="display:flex;align-items:center;gap:8px;margin:5px 0;"><span style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;background:var(--primary);color:#000;border-radius:4px;font-size:10px;font-weight:900;">✓</span><span style="text-decoration:line-through;opacity:0.6;">${formatInlineMarkup(content)}</span></div>`;
+    }
+    if (/^\s*[-\*]\s+(.*)/.test(l)) {
+      const content = l.replace(/^\s*[-\*]\s+/, '');
+      return `<div style="display:flex;align-items:flex-start;gap:8px;margin:4px 0;"><span style="color:var(--primary);font-size:14px;line-height:1;">•</span><span>${formatInlineMarkup(content)}</span></div>`;
+    }
+    if (/^\s*###\s+(.*)/.test(l)) {
+      return `<h5 style="margin: 12px 0 6px 0; font-size: 14px; font-weight: 700; color: var(--primary);">${formatInlineMarkup(l.replace(/^\s*###\s+/, ''))}</h5>`;
+    }
+    if (/^\s*##\s+(.*)/.test(l)) {
+      return `<h4 style="margin: 14px 0 6px 0; font-size: 15px; font-weight: 700; color: var(--primary);">${formatInlineMarkup(l.replace(/^\s*##\s+/, ''))}</h4>`;
+    }
+    if (/^\s*#\s+(.*)/.test(l)) {
+      return `<h3 style="margin: 16px 0 8px 0; font-size: 17px; font-weight: 800; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 4px;">${formatInlineMarkup(l.replace(/^\s*#\s+/, ''))}</h3>`;
+    }
+    if (!l.trim()) {
+      return '<div style="height: 10px;"></div>';
+    }
+    return `<div style="margin-bottom: 4px; line-height: 1.5;">${formatInlineMarkup(l)}</div>`;
+  });
+  return htmlLines.join('');
+}
+
+function formatInlineMarkup(str) {
+  return str
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/`(.*?)`/g, '<code style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--primary);">$1</code>');
+}
+
+function RecipeNotepadModal({ recipe, isOpen, onClose, onSaveNotepad }) {
+  const [notesText, setNotesText] = useState('');
+  const [activeTab, setActiveTab] = useState('preview');
+  const [savedNotice, setSavedNotice] = useState('');
+  const textareaRef = useRef(null);
+
+  useEffect(() => {
+    if (recipe) {
+      const text = recipe.ingredientsNotes !== undefined
+        ? recipe.ingredientsNotes
+        : (Array.isArray(recipe.ingredients) ? recipe.ingredients.join('\n') : '');
+      setNotesText(text);
+      setSavedNotice('');
+      setActiveTab(text.trim() ? 'preview' : 'edit');
+    }
+  }, [recipe]);
+
+  if (!recipe) return null;
+
+  const handleSave = () => {
+    const lines = notesText.split('\n').map(l => l.trim()).filter(Boolean);
+    onSaveNotepad(recipe.id, notesText, lines);
+    setSavedNotice('✓ Notes saved!');
+    setTimeout(() => setSavedNotice(''), 2500);
+    setActiveTab('preview');
+  };
+
+  const insertMarkup = (prefix, suffix = '') => {
+    const textarea = textareaRef.current;
+    if (!textarea) {
+      setNotesText(prev => prev + `${prefix}text${suffix}`);
+      return;
+    }
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = notesText.substring(start, end) || 'text';
+    const replacement = `${prefix}${selectedText}${suffix}`;
+    const newText = notesText.substring(0, start) + replacement + notesText.substring(end);
+    setNotesText(newText);
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + prefix.length, start + prefix.length + selectedText.length);
+    }, 0);
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={`📝 Notepad — ${recipe.name}`}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 10 }}>
+          <div style={{ display: 'flex', gap: 6, background: 'rgba(255,255,255,0.05)', padding: 3, borderRadius: 12 }}>
+            <button
+              type="button"
+              onClick={() => setActiveTab('preview')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: 9,
+                border: 'none',
+                background: activeTab === 'preview' ? 'var(--primary)' : 'transparent',
+                color: activeTab === 'preview' ? '#000' : 'var(--text-dim)',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              Recipe
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('edit')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: 9,
+                border: 'none',
+                background: activeTab === 'edit' ? 'var(--primary)' : 'transparent',
+                color: activeTab === 'edit' ? '#000' : 'var(--text-dim)',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              Edit
+            </button>
+          </div>
+
+          {activeTab === 'edit' && (
+            <div style={{ display: 'flex', gap: 4 }}>
+              <button type="button" onClick={() => insertMarkup('**', '**')} title="Bold" style={{ padding: '4px 8px', background: 'rgba(255,255,255,0.08)', border: 'none', color: '#fff', borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>B</button>
+              <button type="button" onClick={() => insertMarkup('*', '*')} title="Italic" style={{ padding: '4px 8px', background: 'rgba(255,255,255,0.08)', border: 'none', color: '#fff', borderRadius: 6, fontSize: 12, fontStyle: 'italic', cursor: 'pointer' }}>I</button>
+              <button type="button" onClick={() => insertMarkup('# ')} title="Heading" style={{ padding: '4px 8px', background: 'rgba(255,255,255,0.08)', border: 'none', color: '#fff', borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>H1</button>
+              <button type="button" onClick={() => insertMarkup('- ')} title="Bullet List" style={{ padding: '4px 8px', background: 'rgba(255,255,255,0.08)', border: 'none', color: '#fff', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>• List</button>
+              <button type="button" onClick={() => insertMarkup('- [ ] ')} title="Task Checkbox" style={{ padding: '4px 8px', background: 'rgba(255,255,255,0.08)', border: 'none', color: '#fff', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>☑ Task</button>
+            </div>
+          )}
+        </div>
+
+        {activeTab === 'preview' ? (
+          <div
+            style={{
+              minHeight: '200px',
+              maxHeight: '320px',
+              overflowY: 'auto',
+              background: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid var(--border)',
+              borderRadius: '14px',
+              padding: '16px',
+              fontSize: '14px',
+              color: '#fff'
+            }}
+            dangerouslySetInnerHTML={{ __html: parseSimpleMarkdown(notesText) || '<p style="color:var(--text-dim);font-style:italic;">No notes written yet. Switch to "Edit" tab to add ingredients & notes.</p>' }}
+          />
+        ) : (
+          <textarea
+            ref={textareaRef}
+            value={notesText}
+            onChange={e => setNotesText(e.target.value)}
+            placeholder={"Type ingredients or notes using markup...\nExample:\n# Ingredients\n- 500g Chicken\n- **1 tbsp** Butter\n\n# Steps\n- [ ] Prep ingredients\n- [ ] Cook on medium heat"}
+            rows={10}
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              background: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid var(--border)',
+              borderRadius: '14px',
+              padding: '14px',
+              color: '#fff',
+              fontSize: '14px',
+              lineHeight: '1.6',
+              fontFamily: 'monospace',
+              resize: 'vertical',
+              outline: 'none'
+            }}
+          />
+        )}
+
+        {savedNotice && (
+          <div style={{ padding: '8px 12px', background: 'rgba(34, 197, 94, 0.15)', border: '1px solid #22c55e', borderRadius: 10, color: '#22c55e', fontSize: 12, fontWeight: 700, textAlign: 'center' }}>
+            {savedNotice}
+          </div>
+        )}
+
+        {activeTab === 'edit' ? (
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={handleSave}
+            style={{ width: '100%', padding: '13px', borderRadius: 14, fontWeight: 700 }}
+          >
+            Save Notes
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="btn-ghost"
+            onClick={() => setActiveTab('edit')}
+            style={{ width: '100%', padding: '12px', borderRadius: 14, fontWeight: 600, border: '1px solid var(--border)' }}
+          >
+            Edit Notes
+          </button>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+function RecipesTab({ recipes, setRecipes, shoppingList, setShoppingList }) {
   const [showForm, setShowForm] = useState(false);
   const [editingRecipe, setEditingRecipe] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [ingredientsRecipe, setIngredientsRecipe] = useState(null);
   const [search, setSearch] = useState('');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('All');
+  const [foodTypeFilter, setFoodTypeFilter] = useState(null);
 
-  const filtered = recipes.filter(r => r.name.toLowerCase().includes(search.toLowerCase()));
-  const displayRecipes = showFavoritesOnly ? filtered.filter(r => r.favourite) : filtered;
+  // Base pool respects the favourites toggle — categories derive from this
+  const basePool = showFavoritesOnly ? recipes.filter(r => r.favourite) : recipes;
+
+  // Build unique categories from the base pool only
+  const categories = ['All', ...Array.from(new Set(
+    basePool.flatMap(r => r.category ? r.category.split(',').map(c => c.trim()).filter(Boolean) : [])
+  ))];
+
+  // If the active category disappears (e.g. switching to favourites), reset it
+  const resolvedCategory = categories.includes(activeCategory) ? activeCategory : 'All';
+
+  const categoryPool = basePool
+    .filter(r => r.name.toLowerCase().includes(search.toLowerCase()))
+    .filter(r => resolvedCategory === 'All' || (
+      r.category && r.category.split(',').map(c => c.trim()).includes(resolvedCategory)
+    ));
+
+  const displayRecipes = categoryPool
+    .filter(r => !foodTypeFilter || (r.foodType || 'veg') === foodTypeFilter);
 
   const handleAdd = (recipe) => {
     setRecipes(prev => [{ ...recipe, id: Date.now(), favourite: false }, ...prev]);
@@ -995,6 +1324,13 @@ function RecipesTab({ recipes, setRecipes }) {
 
   const handleToggleFavorite = (id) => {
     setRecipes(prev => prev.map(r => r.id === id ? { ...r, favourite: !r.favourite } : r));
+  };
+
+  const handleSaveNotepad = (recipeId, notesText, linesArray) => {
+    setRecipes(prev => prev.map(r => r.id === recipeId ? { ...r, ingredientsNotes: notesText, ingredients: linesArray } : r));
+    if (ingredientsRecipe && ingredientsRecipe.id === recipeId) {
+      setIngredientsRecipe(prev => prev ? { ...prev, ingredientsNotes: notesText, ingredients: linesArray } : null);
+    }
   };
 
   const handleReorder = (newDisplayRecipes) => {
@@ -1027,6 +1363,59 @@ function RecipesTab({ recipes, setRecipes }) {
           onChange={e => setSearch(e.target.value)} />
       </div>
 
+      {/* Category filter bar — only show when there are categories */}
+      {categories.length > 1 && (
+        <div className="recipe-category-bar">
+          {categories.map(cat => {
+            const count = cat === 'All'
+              ? basePool.length
+              : basePool.filter(r => r.category && r.category.split(',').map(c => c.trim()).includes(cat)).length;
+            return (
+              <button
+                key={cat}
+                className={`sort-pill recipe-cat-pill ${resolvedCategory === cat ? 'active' : ''}`}
+                onClick={() => setActiveCategory(cat)}
+              >
+                <span>{cat}</span>
+                <span className="cat-pill-count">{count}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Diet filter pills — icon only, full-width row below categories */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+        {FOOD_TYPES.map(ft => {
+          const count = categoryPool.filter(r => (r.foodType || 'veg') === ft.id).length;
+          const isActive = foodTypeFilter === ft.id;
+          return (
+            <button
+              key={ft.id}
+              title={ft.label}
+              onClick={() => setFoodTypeFilter(isActive ? null : ft.id)}
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                padding: '8px 0',
+                borderRadius: 12,
+                border: `2px solid ${isActive ? ft.color : 'var(--border)'}`,
+                background: isActive ? `${ft.color}18` : 'var(--bg-card2)',
+                cursor: 'pointer',
+                transition: 'all 0.18s',
+                boxShadow: isActive ? `0 4px 12px ${ft.color}44` : 'none',
+              }}
+            >
+              <FoodTypeSymbol type={ft.id} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: isActive ? ft.color : 'var(--text-3)' }}>{count}</span>
+            </button>
+          );
+        })}
+      </div>
+
       {recipes.length === 0 ? (
         <div className="empty-state">
           <BookOpen size={36} className="empty-icon" />
@@ -1045,6 +1434,7 @@ function RecipesTab({ recipes, setRecipes }) {
                     onEdit={() => setEditingRecipe(r)}
                     onDelete={() => setDeletingId(r.id)}
                     onToggleFavorite={handleToggleFavorite}
+                    onOpenIngredients={() => setIngredientsRecipe(r)}
                   />
                 ))}
               </Reorder.Group>
@@ -1054,6 +1444,7 @@ function RecipesTab({ recipes, setRecipes }) {
                   onEdit={() => setEditingRecipe(r)}
                   onDelete={() => setDeletingId(r.id)}
                   onToggleFavorite={handleToggleFavorite}
+                  onOpenIngredients={() => setIngredientsRecipe(r)}
                 />
               ))
             )}
@@ -1074,6 +1465,14 @@ function RecipesTab({ recipes, setRecipes }) {
           }}
         />
       </Modal>
+
+      <RecipeNotepadModal
+        recipe={ingredientsRecipe}
+        isOpen={!!ingredientsRecipe}
+        onClose={() => setIngredientsRecipe(null)}
+        onSaveNotepad={handleSaveNotepad}
+        setShoppingList={setShoppingList}
+      />
 
       <ConfirmModal
         isOpen={!!deletingId}
@@ -2501,7 +2900,7 @@ export default function App() {
                     <>
                       {tab === 'planner' && <PlannerTab plan={plan} onPlanChange={handlePlanChange} menuItems={menuItems} onOpenPicker={setPickerSlot} onNavigateToBite={handleNavigateToBite} />}
                       {tab === 'menu' && <MenuTab menuItems={menuItems} setMenuItems={handleMenuChange} />}
-                      {tab === 'recipes' && <RecipesTab recipes={recipes} setRecipes={handleRecipesChange} />}
+                      {tab === 'recipes' && <RecipesTab recipes={recipes} setRecipes={handleRecipesChange} shoppingList={shoppingList} setShoppingList={handleShoppingChange} />}
                       {tab === 'shopping' && <ShoppingTab shoppingList={shoppingList} setShoppingList={handleShoppingChange} />}
                       {tab === 'nextbites' && <NextBitesTab bites={nextBites} setBites={handleNextBitesChange} initialSearch={nextBitesSearch} setInitialSearch={setNextBitesSearch} highlightedBiteId={highlightedBiteId} setHighlightedBiteId={setHighlightedBiteId} />}
                     </>
@@ -2620,6 +3019,52 @@ export default function App() {
   );
 }
 
+function StarRating({ value = 0, onChange, size = 16, readOnly = false, totalStars = 5, showEmpty = true, showLabel = true, labelFormat = 'full' }) {
+  const pointsPerStar = 10 / totalStars;
+  const normalizedValue = value / pointsPerStar;
+
+  const handleClick = (starIndex, isHalf) => {
+    if (readOnly || !onChange) return;
+    const newValue = isHalf
+      ? (starIndex + 0.5) * pointsPerStar
+      : (starIndex + 1) * pointsPerStar;
+    onChange(newValue === value ? 0 : newValue);
+  };
+
+  return (
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+      {Array.from({ length: totalStars }, (_, i) => {
+        const starValue = normalizedValue - i;
+        const isFull = starValue >= 1;
+        const isHalf = starValue >= 0.5 && starValue < 1;
+        const isEmpty = !isFull && !isHalf;
+
+        if (isEmpty && !showEmpty && readOnly) return null;
+
+        return (
+          <div key={i} style={{ position: 'relative', cursor: readOnly ? 'default' : 'pointer', width: size, height: size }}>
+            <Star size={size} strokeWidth={2.5} fill="none" color="rgba(145, 110, 27, 0.4)" style={{ position: 'absolute', top: 0, left: 0 }} />
+            {(isFull || isHalf) && (
+              <div style={{ position: 'absolute', top: 0, left: 0, width: isHalf ? '50%' : '100%', overflow: 'hidden', height: size }}>
+                <Star size={size} strokeWidth={2.5} fill="#916E1B" color="#916E1B" style={{ filter: 'drop-shadow(0 2px 4px rgba(145,110,27,0.2))' }} />
+              </div>
+            )}
+            {!readOnly && (
+              <>
+                <div onClick={(e) => { e.stopPropagation(); handleClick(i, true); }} style={{ position: 'absolute', top: 0, left: 0, width: '50%', height: '100%', zIndex: 2 }} />
+                <div onClick={(e) => { e.stopPropagation(); handleClick(i, false); }} style={{ position: 'absolute', top: 0, right: 0, width: '50%', height: '100%', zIndex: 2 }} />
+              </>
+            )}
+          </div>
+        );
+      })}
+      {showLabel && value > 0 && (
+        <span style={{ fontSize: size * 0.8, fontWeight: 900, color: '#916E1B', marginLeft: 8 }}>{labelFormat === 'short' ? Number(value).toFixed(1) : `${Number(value).toFixed(1)}/10`}</span>
+      )}
+    </div>
+  );
+}
+
 function WatchCardLarge({ item, type, onEdit, onDelete, onToggleFavorite, onToggleComplete, onClick, view }) {
   return (
     <div id={`watch-card-${item.id}`} className="watch-card-large" onClick={onClick}>
@@ -2631,16 +3076,60 @@ function WatchCardLarge({ item, type, onEdit, onDelete, onToggleFavorite, onTogg
           </div>
         </div>
       )}
-      {type === 'series' && view === 'watched' && Array.isArray(item.seasons) && item.seasons.length > 0 && item.seasons.some(s => (s.episodes || []).some(e => !e.watched)) && (
-        <div className="not-finished-badge-container">
-          <div className="not-finished-badge">Not Finished</div>
-          <div className="not-finished-progress">
-            {(() => {
-              const rs = item.seasons.filter(s => (s.episodes || []).some(e => !e.watched)).length;
-              const re = item.seasons.reduce((acc, s) => acc + (s.episodes || []).filter(e => !e.watched).length, 0);
-              return `${rs} S - ${re} E Left`;
-            })()}
-          </div>
+      {type === 'series' && (
+        <div style={{
+          position: 'absolute',
+          top: 15,
+          right: 15,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+          gap: 6,
+          zIndex: 10,
+          pointerEvents: 'none'
+        }}>
+          {item.status === 'ongoing' && (
+            <div className="ongoing-badge" style={{
+              background: '#000000',
+              color: '#916E1B',
+              border: '2px solid #916E1B',
+              fontSize: '10px',
+              fontWeight: '900',
+              width: '110px',
+              height: '26px',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              boxSizing: 'border-box',
+              borderRadius: '10px',
+              textTransform: 'uppercase',
+              boxShadow: '0 4px 15px rgba(145, 110, 27, 0.15)',
+              letterSpacing: '0.5px'
+            }}>Ongoing</div>
+          )}
+          {view === 'watched' && Array.isArray(item.seasons) && item.seasons.length > 0 && item.seasons.some(s => (s.episodes || []).some(e => !e.watched)) && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+              <div className="not-finished-badge" style={{
+                background: '#916E1B',
+                color: '#000000',
+                border: '2px solid #000000',
+                outline: '1.5px solid #916E1B',
+                outlineOffset: '1px',
+                fontSize: '10px',
+                fontWeight: '900',
+                width: '110px',
+                height: '26px',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                boxSizing: 'border-box',
+                borderRadius: '10px',
+                textTransform: 'uppercase',
+                boxShadow: '0 4px 15px rgba(145, 110, 27, 0.3)',
+                letterSpacing: '0.5px'
+              }}>Not Finished</div>
+            </div>
+          )}
         </div>
       )}
       <div className="watch-card-inner">
@@ -2692,35 +3181,79 @@ function WatchCardLarge({ item, type, onEdit, onDelete, onToggleFavorite, onTogg
             {item.synopsis || item.note || 'No description available for this title.'}
           </div>
 
-
-          <div className="watch-footer-large">
-            <button
-              className={item.completed && type === 'series' ? "watch-main-btn-large" : "watch-action-btn-large"}
-              style={item.completed && type === 'series' ? { background: 'var(--bg-card2)', color: 'var(--text)', border: '1px solid var(--border)' } : {}}
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open(`https://www.google.com/search?q=${encodeURIComponent(item.title)}+${type === 'movies' ? 'movie' : 'series'}`, '_blank');
-              }}
-              title="Search on Google"
-            >
-              <Globe size={item.completed && type === 'series' ? 20 : 24} />
-              {item.completed && type === 'series' && <span>Search on Google</span>}
-            </button>
-
-            {(!item.completed || type === 'movies') && (
+          {item.completed && type === 'series' ? (
+            <div className="watch-footer-large">
+              {item.userRating > 0 && (
+                <div style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'transparent',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  borderRadius: '16px',
+                  height: '52px'
+                }}>
+                  <StarRating value={item.userRating} readOnly size={window.innerWidth <= 768 ? 15 : 19} totalStars={10} labelFormat="short" />
+                </div>
+              )}
               <button
-                className="watch-main-btn-large active"
-                style={{ background: 'var(--primary)', color: '#000' }}
+                className={!item.userRating ? "watch-main-btn-large" : "watch-action-btn-large"}
+                style={!item.userRating ? { background: 'transparent', color: 'var(--text)', border: '1px solid rgba(255, 255, 255, 0.3)' } : { border: '1px solid rgba(255, 255, 255, 0.3)' }}
                 onClick={(e) => {
                   e.stopPropagation();
-                  type === 'movies' ? onDelete(e) : onToggleComplete(e);
+                  window.open(`https://www.google.com/search?q=${encodeURIComponent(item.title)}+series`, '_blank');
                 }}
+                title="Search on Google"
               >
-                <Check size={20} />
-                <span>Mark as Watched</span>
+                <Globe size={!item.userRating ? 20 : 24} />
+                {!item.userRating && <span>Search on Google</span>}
               </button>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="watch-footer-large" style={{ flexDirection: 'column' }}>
+              {type === 'series' && item.userRating > 0 && (
+                <div style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'transparent',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  borderRadius: '16px',
+                  height: '52px'
+                }}>
+                  <StarRating value={item.userRating} readOnly size={20} totalStars={10} labelFormat="short" />
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: 12, width: '100%' }}>
+                <button
+                  className="watch-main-btn-large active"
+                  style={{ background: '#916E1B', color: '#000', flex: 1 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    type === 'movies' ? onDelete(e) : onToggleComplete(e);
+                  }}
+                >
+                  <Check size={20} />
+                  <span>Mark as Watched</span>
+                </button>
+
+                <button
+                  className="watch-action-btn-large"
+                  style={{ border: '1px solid rgba(255, 255, 255, 0.3)' }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.open(`https://www.google.com/search?q=${encodeURIComponent(item.title)}+${type === 'movies' ? 'movie' : 'series'}`, '_blank');
+                  }}
+                  title="Search on Google"
+                >
+                  <Globe size={24} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -2737,55 +3270,238 @@ function AddWatchItemForm({ onSubmit, initialData, type }) {
   const [genres, setGenres] = useState(initialData?.genres || '');
   const [remarks, setRemarks] = useState(initialData?.remarks || '');
   const [language, setLanguage] = useState(initialData?.language || '');
+  const [status, setStatus] = useState(initialData?.status || 'completed');
+  const [userRating, setUserRating] = useState(initialData?.userRating || 0);
 
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchMessage, setSearchMessage] = useState('');
+
+  const extractQueryFromUrl = (urlString) => {
+    try {
+      const url = new URL(urlString);
+      if (url.hostname.includes('google')) {
+        const q = url.searchParams.get('q') || url.searchParams.get('oq') || url.searchParams.get('query');
+        if (q) return q;
+      }
+      if (url.hostname.includes('imdb')) {
+        const parts = url.pathname.split('/').filter(Boolean);
+        const ttIndex = parts.findIndex(p => p.startsWith('tt'));
+        if (ttIndex !== -1 && ttIndex > 0) {
+          return parts[ttIndex - 1].replace(/-/g, ' ');
+        }
+        if (parts.length > 0) {
+          return parts[parts.length - 1].replace(/-/g, ' ');
+        }
+      }
+    } catch (e) { }
+    return urlString;
+  };
+
+const formatLanguageName = (code) => {
+  if (!code) return '';
+  const langMap = {
+    'ml': 'Malayalam',
+    'hi': 'Hindi',
+    'ta': 'Tamil',
+    'te': 'Telugu',
+    'kn': 'Kannada',
+    'en': 'English',
+    'ko': 'Korean',
+    'ja': 'Japanese',
+    'es': 'Spanish',
+    'fr': 'French',
+    'de': 'German',
+    'it': 'Italian',
+    'zh': 'Chinese',
+    'mr': 'Marathi',
+    'bn': 'Bengali',
+    'pa': 'Punjabi',
+    'gu': 'Gujarati'
+  };
+  const cleanCode = String(code).toLowerCase().trim();
+  return langMap[cleanCode] || (cleanCode.length <= 3 ? cleanCode.toUpperCase() : code);
+};
 
   const performSearch = async (query) => {
-    if (!query) return;
+    if (!query || !query.trim()) return;
     setIsSearching(true);
-    try {
-      const resp = await fetch(`https://imdb.iamidiotareyoutoo.com/search?q=${encodeURIComponent(query)}`);
-      const data = await resp.json();
-      if (data.ok && data.description) {
-        setSearchResults(data.description);
+    setSearchMessage('');
+    let results = [];
+    const cleanQuery = query.trim();
+
+    const tmdbKeys = [
+      '15d2fb673d4d47271e53f090d7f644fb',
+      '352467d3e02029b3c4f74d0847b2c5c9',
+      'b8b0933391fb16d910f5451670183141',
+      'c1f01691238e9d3d3a1f1a148a04f981'
+    ];
+
+    // Source 1: TMDB API with Multi-key Failover & Language Formatting
+    for (const tmdbApiKey of tmdbKeys) {
+      if (results.length > 0) break;
+      try {
+        const endpoint = type === 'movies' 
+          ? `https://api.themoviedb.org/3/search/movie?api_key=${tmdbApiKey}&query=${encodeURIComponent(cleanQuery)}&include_adult=true`
+          : type === 'series'
+          ? `https://api.themoviedb.org/3/search/tv?api_key=${tmdbApiKey}&query=${encodeURIComponent(cleanQuery)}&include_adult=true`
+          : `https://api.themoviedb.org/3/search/multi?api_key=${tmdbApiKey}&query=${encodeURIComponent(cleanQuery)}&include_adult=true`;
+          
+        const resp = await fetch(endpoint);
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.results && data.results.length > 0) {
+            results = data.results
+              .filter(item => item.media_type !== 'person')
+              .map(item => ({
+                "#TITLE": item.title || item.name,
+                "#YEAR": (item.release_date || item.first_air_date || '').slice(0, 4),
+                "#IMG_POSTER": item.poster_path ? `https://image.tmdb.org/t500${item.poster_path}` : null,
+                "#ACTORS": item.overview ? item.overview.slice(0, 120) + '...' : '',
+                "#TYPE": item.media_type ? (item.media_type === 'movie' ? 'Movie' : 'TV Series') : (item.title ? 'Movie' : 'TV Series'),
+                "#SYNOPSIS": item.overview || '',
+                "#RATING": item.vote_average ? `${item.vote_average.toFixed(1)}/10` : '',
+                "#ORIGINAL_LANG": formatLanguageName(item.original_language)
+              }));
+          }
+        }
+      } catch (e) {
+        console.warn("TMDB search key failed, trying next key...", e);
       }
-    } catch (e) {
-      console.warn("Search failed", e);
-    } finally {
-      setIsSearching(false);
     }
+
+    // Source 2: OMDb API fallback
+    if (results.length === 0) {
+      try {
+        const omdbKey = 'trilogy';
+        const typeParam = type === 'movies' ? '&type=movie' : type === 'series' ? '&type=series' : '';
+        const resp = await fetch(`https://www.omdbapi.com/?s=${encodeURIComponent(cleanQuery)}${typeParam}&apikey=${omdbKey}`);
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.Response === "True" && Array.isArray(data.Search)) {
+            results = data.Search.map(item => ({
+              "#TITLE": item.Title,
+              "#YEAR": item.Year,
+              "#IMG_POSTER": item.Poster !== "N/A" ? item.Poster : null,
+              "#ACTORS": '',
+              "#TYPE": item.Type === 'movie' ? 'Movie' : 'TV Series',
+              "#ORIGINAL_LANG": ''
+            }));
+          }
+        }
+      } catch (e) {
+        console.warn("OMDb search failed", e);
+      }
+    }
+
+    // Source 3: Cinemeta API fallback (Stremio public catalog)
+    if (results.length === 0) {
+      try {
+        const cat = type === 'series' ? 'series' : 'movie';
+        const resp = await fetch(`https://v3-cinemeta.strem.io/catalog/${cat}/top/search=${encodeURIComponent(cleanQuery)}.json`);
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.metas && data.metas.length > 0) {
+            results = data.metas.map(item => ({
+              "#TITLE": item.name,
+              "#YEAR": String(item.year || ''),
+              "#IMG_POSTER": item.poster || null,
+              "#ACTORS": item.description || '',
+              "#TYPE": item.type === 'movie' ? 'Movie' : 'TV Series',
+              "#SYNOPSIS": item.description || '',
+              "#ORIGINAL_LANG": ''
+            }));
+          }
+        }
+      } catch (e) {
+        console.warn("Cinemeta search failed", e);
+      }
+    }
+
+    // Source 4: Wikipedia Malayalam & English Fallback for Indian/Malayalam movies & Malayalam script
+    if (results.length === 0) {
+      try {
+        const qWithMovie = cleanQuery.toLowerCase().includes('movie') || cleanQuery.toLowerCase().includes('film') ? cleanQuery : `${cleanQuery} movie`;
+        const wikiUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(qWithMovie)}&format=json&origin=*`;
+        const resp = await fetch(wikiUrl);
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.query?.search && data.query.search.length > 0) {
+            results = data.query.search.slice(0, 5).map(item => ({
+              "#TITLE": item.title.replace(/\s*\(.*?\)\s*/g, ''),
+              "#YEAR": '',
+              "#IMG_POSTER": null,
+              "#ACTORS": item.snippet ? item.snippet.replace(/<[^>]*>?/gm, '') : '',
+              "#TYPE": 'Movie',
+              "#ORIGINAL_LANG": 'Malayalam'
+            }));
+          }
+        }
+      } catch (e) {
+        console.warn("Wikipedia search failed", e);
+      }
+    }
+
+    // Source 5: TVMaze fallback (for TV Series)
+    if (results.length === 0 && type !== 'movies') {
+      try {
+        const resp = await fetch(`https://api.tvmaze.com/search/shows?q=${encodeURIComponent(cleanQuery)}`);
+        if (resp.ok) {
+          const data = await resp.json();
+          if (Array.isArray(data) && data.length > 0) {
+            results = data.map(item => ({
+              "#TITLE": item.show?.name,
+              "#YEAR": item.show?.premiered ? item.show.premiered.split('-')[0] : '',
+              "#IMG_POSTER": item.show?.image?.medium || item.show?.image?.original || null,
+              "#ACTORS": item.show?.genres ? item.show.genres.join(', ') : '',
+              "#TYPE": 'TV Series',
+              "#SYNOPSIS": item.show?.summary ? item.show.summary.replace(/<[^>]*>?/gm, '') : '',
+              "#ORIGINAL_LANG": ''
+            })).filter(i => i["#TITLE"]);
+          }
+        }
+      } catch (e) {
+        console.warn("TVMaze search failed", e);
+      }
+    }
+
+    setSearchResults(results);
+    if (results.length === 0) {
+      setSearchMessage(`No auto-results found for "${query}". You can search on Google using the button above.`);
+    }
+    setIsSearching(false);
   };
 
   const handleMagicFetch = () => {
     if (!title) return;
-    if (title.startsWith('http')) {
-      try {
-        const url = new URL(title);
-        let name = '';
-        if (url.hostname.includes('google')) {
-          name = url.searchParams.get('q');
-        } else if (url.hostname.includes('imdb')) {
-          const parts = url.pathname.split('/');
-          name = parts.find(p => p.startsWith('tt')) ? parts[parts.indexOf(parts.find(p => p.startsWith('tt'))) - 1] : parts[parts.length - 2];
-        }
-        if (name) {
-          const cleanName = name.replace(/\+/g, ' ').replace(/-/g, ' ');
-          setTitle(titleCase(cleanName));
-          performSearch(cleanName);
-        }
-      } catch (e) { }
-    } else {
-      performSearch(title);
+    let queryToSearch = title.trim();
+    if (queryToSearch.startsWith('http://') || queryToSearch.startsWith('https://')) {
+      const extracted = extractQueryFromUrl(queryToSearch);
+      if (extracted) {
+        const cleanName = extracted.replace(/\+/g, ' ').replace(/-/g, ' ').trim();
+        setTitle(titleCase(cleanName));
+        queryToSearch = cleanName;
+      }
     }
+    performSearch(queryToSearch);
+  };
+
+  const handleOpenGoogleSearch = () => {
+    const q = title.trim() ? `${title.trim()} ${type === 'movies' ? 'movie' : 'series'}` : (type === 'movies' ? 'popular movies' : 'popular tv series');
+    window.open(`https://www.google.com/search?q=${encodeURIComponent(q)}`, '_blank');
   };
 
   const handleSelectResult = (res) => {
     setTitle(res["#TITLE"]);
     setExtra(res["#YEAR"]);
-    setPosterUrl(res["#IMG_POSTER"]);
+    if (res["#IMG_POSTER"]) setPosterUrl(res["#IMG_POSTER"]);
+    if (res["#SYNOPSIS"]) setSynopsis(res["#SYNOPSIS"]);
+    if (res["#RATING"]) setRating(res["#RATING"]);
+    if (res["#GENRES"]) setGenres(res["#GENRES"]);
+    if (res["#ORIGINAL_LANG"]) setLanguage(res["#ORIGINAL_LANG"]);
     setSearchResults([]);
-    if (res["#ACTORS"]) setNote(`Starring: ${res["#ACTORS"]}`);
+    setSearchMessage('');
+    if (res["#ACTORS"] && !note) setNote(res["#ACTORS"]);
   };
 
   return (
@@ -2800,36 +3516,163 @@ function AddWatchItemForm({ onSubmit, initialData, type }) {
         genres,
         remarks,
         language,
+        status,
+        userRating,
         [type === 'movies' ? 'year' : 'seasons']: extra,
         updatedAt: Date.now()
       });
     }}>
-      <div className="auth-input-group" style={{ position: 'relative', marginBottom: 25 }}>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <input className="meal-slot-input" value={title} onChange={e => setTitle(e.target.value)}
-            placeholder={type === 'movies' ? "Enter Movie Name or Link..." : "Enter Series Name or Link..."}
-            required style={{ flex: 1, fontSize: '16px', padding: '16px 20px', borderRadius: '18px' }} />
-          <button type="button" className="magic-fetch-btn" onClick={handleMagicFetch}
-            style={{ marginBottom: 0, padding: '0 20px', borderRadius: '18px', opacity: isSearching ? 0.6 : 1 }} disabled={isSearching}>
+      <div className="auth-input-group" style={{ position: 'relative', marginBottom: 20 }}>
+        <label style={{ color: 'var(--text-dim)', fontSize: '13px', marginBottom: 8, display: 'block', fontWeight: 700 }}>
+          {type === 'movies' ? 'Movie Title or Link' : 'Series Title or Link'}
+        </label>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <input
+            className="meal-slot-input"
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleMagicFetch();
+              }
+            }}
+            placeholder={type === 'movies' ? "Enter Movie Name or Google/IMDb link..." : "Enter Series Name or Google/IMDb link..."}
+            required
+            style={{ flex: '1 1 200px', fontSize: '15px', padding: '14px 18px', borderRadius: '16px' }}
+          />
+          <button
+            type="button"
+            className="magic-fetch-btn"
+            onClick={handleMagicFetch}
+            title="Auto-fetch / Search details"
+            style={{
+              marginBottom: 0,
+              padding: '0 18px',
+              borderRadius: '16px',
+              opacity: isSearching ? 0.6 : 1,
+              background: 'var(--primary)',
+              color: '#000',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 700,
+              height: '50px'
+            }}
+            disabled={isSearching}
+          >
             {isSearching ? <RotateCw size={18} className="animate-spin" /> : <Search size={18} />}
+          </button>
+          <button
+            type="button"
+            className="google-search-option-btn"
+            onClick={handleOpenGoogleSearch}
+            title="Search on Google"
+            style={{
+              marginBottom: 0,
+              padding: '0 16px',
+              borderRadius: '16px',
+              background: 'rgba(255, 255, 255, 0.07)',
+              color: '#fff',
+              border: '1px solid rgba(255, 255, 255, 0.18)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: '13px',
+              fontWeight: 600,
+              whiteSpace: 'nowrap',
+              height: '50px'
+            }}
+          >
+            <Globe size={16} style={{ color: '#4285F4' }} />
+            <span>Search Google</span>
           </button>
         </div>
 
+        {searchMessage && (
+          <div style={{ marginTop: 8, fontSize: '12px', color: '#ffb703', padding: '8px 12px', background: 'rgba(255, 183, 3, 0.1)', borderRadius: '10px' }}>
+            {searchMessage}
+          </div>
+        )}
+
         {searchResults.length > 0 && (
-          <div className="search-results-overlay" style={{ top: '100%', zIndex: 3000 }}>
+          <div className="search-results-overlay" style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            zIndex: 3000,
+            background: '#1c1c1e',
+            border: '1px solid var(--border)',
+            borderRadius: '16px',
+            marginTop: 6,
+            maxHeight: '280px',
+            overflowY: 'auto',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.6)',
+            padding: '8px'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px 10px 10px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-dim)' }}>Select Search Result ({searchResults.length}):</span>
+              <button type="button" className="res-close-btn" onClick={() => setSearchResults([])} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}>Close</button>
+            </div>
             {searchResults.map((res, i) => (
-              <div key={i} className="search-result-item" onClick={() => handleSelectResult(res)}>
-                {res["#IMG_POSTER"] ? <img src={res["#IMG_POSTER"]} alt="" /> : <div className="res-img-placeholder"><Film size={20} /></div>}
-                <div style={{ flex: 1 }}>
-                  <div className="res-title">{res["#TITLE"]}</div>
-                  <div className="res-meta">{res["#YEAR"]} • {res["#ACTORS"]}</div>
+              <div
+                key={i}
+                className="search-result-item"
+                onClick={() => handleSelectResult(res)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '10px',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s',
+                  marginBottom: 4
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                {res["#IMG_POSTER"] ? (
+                  <img src={res["#IMG_POSTER"]} alt="" style={{ width: 38, height: 54, objectFit: 'cover', borderRadius: '6px' }} />
+                ) : (
+                  <div style={{ width: 38, height: 54, background: 'rgba(255,255,255,0.1)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Film size={18} />
+                  </div>
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="res-title" style={{ fontWeight: 700, fontSize: '14px', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{res["#TITLE"]}</div>
+                  <div className="res-meta" style={{ fontSize: '12px', color: 'var(--text-dim)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {res["#YEAR"]} {res["#TYPE"] ? `• ${res["#TYPE"]}` : ''} {res["#ACTORS"] ? `• ${res["#ACTORS"]}` : ''}
+                  </div>
                 </div>
               </div>
             ))}
-            <button className="res-close-btn" onClick={() => setSearchResults([])}>Close Results</button>
           </div>
         )}
       </div>
+
+      {posterUrl && (
+        <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(255,255,255,0.03)', padding: 10, borderRadius: '14px', border: '1px solid var(--border)' }}>
+          <img src={posterUrl} alt="Poster" style={{ width: 40, height: 56, objectFit: 'cover', borderRadius: '8px' }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-dim)', display: 'block', fontWeight: 600 }}>Poster Image URL</span>
+            <input
+              className="meal-slot-input"
+              value={posterUrl}
+              onChange={e => setPosterUrl(e.target.value)}
+              placeholder="Poster Image URL..."
+              style={{ fontSize: '12px', padding: '6px 10px', borderRadius: '8px', marginTop: 4, width: '100%', boxSizing: 'border-box' }}
+            />
+          </div>
+          <button type="button" onClick={() => setPosterUrl('')} style={{ background: 'none', border: 'none', color: '#ff4d4d', cursor: 'pointer', padding: 4 }}>
+            <X size={16} />
+          </button>
+        </div>
+      )}
 
       {type === 'series' && (
         <div className="auth-input-group" style={{ marginBottom: 25 }}>
@@ -2841,6 +3684,39 @@ function AddWatchItemForm({ onSubmit, initialData, type }) {
             placeholder="e.g. S02 E05, or 'Must watch with friends'"
             style={{ height: 80, padding: '15px', borderRadius: '18px', fontSize: '14px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', color: '#fff', width: '100%', boxSizing: 'border-box' }}
           />
+        </div>
+      )}
+
+      {type === 'series' && initialData && (
+        <div className="auth-input-group" style={{ marginBottom: 25 }}>
+          <label style={{ color: 'var(--text-dim)', fontSize: '13px', marginBottom: 8, display: 'block', fontWeight: 700 }}>Series Status</label>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button
+              type="button"
+              className={`sort-pill ${status === 'ongoing' ? 'active' : ''}`}
+              onClick={() => setStatus('ongoing')}
+              style={{ flex: 1, padding: '12px', justifyContent: 'center', margin: 0 }}
+            >
+              Ongoing
+            </button>
+            <button
+              type="button"
+              className={`sort-pill ${status === 'completed' ? 'active' : ''}`}
+              onClick={() => setStatus('completed')}
+              style={{ flex: 1, padding: '12px', justifyContent: 'center', margin: 0 }}
+            >
+              Completed
+            </button>
+          </div>
+        </div>
+      )}
+
+      {type === 'series' && (
+        <div className="auth-input-group" style={{ marginBottom: 25 }}>
+          <label style={{ color: 'var(--text-dim)', fontSize: '13px', marginBottom: 8, display: 'block', fontWeight: 700 }}>Your Rating</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <StarRating value={userRating} onChange={setUserRating} size={24} totalStars={10} />
+          </div>
         </div>
       )}
 
@@ -3138,6 +4014,7 @@ function PlanWatchTab({ type, items, setItems, selectedId, setSelectedId }) {
   const [selectedLang, setSelectedLang] = useState('All');
   const [sortBy, setSortBy] = useState('date'); // 'date' or 'az'
   const [filterNotFinished, setFilterNotFinished] = useState(false);
+  const [filterOngoing, setFilterOngoing] = useState(false);
   const [isLangsExpanded, setIsLangsExpanded] = useState(false);
   const lastSelectedId = useRef(null);
 
@@ -3179,7 +4056,14 @@ function PlanWatchTab({ type, items, setItems, selectedId, setSelectedId }) {
   const allLangs = ['All', ...new Set(currentViewItems.map(i => i.language).filter(Boolean))];
 
   const filtered = items.filter(i => {
-    const matchesSearch = i.title.toLowerCase().includes(search.toLowerCase());
+    const q = search.toLowerCase().trim();
+    const matchesSearch = !q || 
+      i.title?.toLowerCase().includes(q) ||
+      i.language?.toLowerCase().includes(q) ||
+      i.note?.toLowerCase().includes(q) ||
+      i.genres?.toLowerCase().includes(q) ||
+      i.remarks?.toLowerCase().includes(q) ||
+      String(i.year || '').includes(q);
     const matchesLang = selectedLang === 'All' || i.language === selectedLang;
     const matchesNotFinished = !filterNotFinished || (
       type === 'series' && 
@@ -3187,14 +4071,18 @@ function PlanWatchTab({ type, items, setItems, selectedId, setSelectedId }) {
       i.seasons.length > 0 && 
       i.seasons.some(s => (s.episodes || []).some(e => !e.watched))
     );
+    const matchesOngoing = !filterOngoing || (
+      type === 'series' && i.status === 'ongoing'
+    );
     
     if (type === 'movies') return matchesSearch && matchesLang; // Movies don't use tabs or finished filter
     const matchesView = view === 'to-watch' ? !i.completed : i.completed;
-    return matchesSearch && matchesLang && matchesView && matchesNotFinished;
+    return matchesSearch && matchesLang && matchesView && matchesNotFinished && matchesOngoing;
   });
 
   const sortedFiltered = [...filtered].sort((a, b) => {
     if (sortBy === 'az') return a.title.localeCompare(b.title);
+    if (sortBy === 'rating') return (b.userRating || 0) - (a.userRating || 0);
     const timeA = a.lastModified || Number(a.id) || 0;
     const timeB = b.lastModified || Number(b.id) || 0;
     return timeB - timeA; // Newer first
@@ -3355,6 +4243,16 @@ function PlanWatchTab({ type, items, setItems, selectedId, setSelectedId }) {
         <button className={`sort-pill ${sortBy === 'az' ? 'active' : ''}`} onClick={() => setSortBy('az')}>
           <ArrowDownAZ size={12} /> <span>A-Z</span>
         </button>
+        {type === 'series' && (
+          <button className={`sort-pill ${sortBy === 'rating' ? 'active' : ''}`} onClick={() => setSortBy('rating')}>
+            <Star size={12} /> <span>Rating</span>
+          </button>
+        )}
+        {type === 'series' && (
+          <button className={`sort-pill ${filterOngoing ? 'active' : ''}`} onClick={() => setFilterOngoing(!filterOngoing)}>
+            <Activity size={12} /> <span>Ongoing</span>
+          </button>
+        )}
         {type === 'series' && view === 'watched' && (
           <button className={`sort-pill ${filterNotFinished ? 'active' : ''}`} onClick={() => setFilterNotFinished(!filterNotFinished)}>
             <Sparkles size={12} /> <span>Not Finished</span>
@@ -3501,7 +4399,31 @@ function DestinationCard({ dest, onClick, onUpdate, onDelete, onEdit }) {
                 <span>{dest.season}</span>
               </div>
             )}
-            {!dest.budget?.total && !dest.season && (
+            {Array.isArray(dest.places) && dest.places.length > 0 && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                padding: '6px 12px', borderRadius: '12px',
+                color: '#fff', fontSize: '13px', fontWeight: '700'
+              }}>
+                <MapPin size={14} style={{ color: 'var(--primary)' }} />
+                <span>{dest.places.filter(p => p.completed).length}/{dest.places.length} Places</span>
+              </div>
+            )}
+            {Array.isArray(dest.activities) && dest.activities.length > 0 && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                padding: '6px 12px', borderRadius: '12px',
+                color: '#fff', fontSize: '13px', fontWeight: '700'
+              }}>
+                <Sparkles size={14} style={{ color: 'var(--primary)' }} />
+                <span>{dest.activities.filter(a => a.completed).length}/{dest.activities.length} Activities</span>
+              </div>
+            )}
+            {!dest.budget?.total && !dest.season && (!dest.places || dest.places.length === 0) && (!dest.activities || dest.activities.length === 0) && (
               <span style={{ opacity: 0.4, fontSize: '12px', fontStyle: 'italic' }}>No planning details added yet...</span>
             )}
           </div>
@@ -3555,6 +4477,11 @@ function PlanGoTab({ destinations, setDestinations, filter, selectedId, setSelec
     setDestinations(destinations.map(d => d.id === id ? { ...d, [field]: val } : d));
   };
 
+  const toggleItemCompleted = (field, itemId) => {
+    const items = (selected[field] || []).map(i => i.id === itemId ? { ...i, completed: !i.completed } : i);
+    updateDestination(selectedId, field, items);
+  };
+
   const addItem = (field) => {
     if (field === 'references') {
       const url = prompt('Enter website or video link:');
@@ -3568,7 +4495,7 @@ function PlanGoTab({ destinations, setDestinations, filter, selectedId, setSelec
       const val = prompt(promptMsg);
       if (!val) return;
       const items = selected[field] || [];
-      updateDestination(selectedId, field, [...items, { id: Date.now().toString(), title: val, note: '' }]);
+      updateDestination(selectedId, field, [...items, { id: Date.now().toString(), title: val, note: '', completed: false }]);
     }
   };
 
@@ -3649,7 +4576,15 @@ function PlanGoTab({ destinations, setDestinations, filter, selectedId, setSelec
                   { id: 'references', icon: Link }
                 ].find(t => t.id === activeTab)?.icon || MapPin;
 
-                const items = Array.isArray(selected[activeTab]) ? selected[activeTab] : [];
+                let items = Array.isArray(selected[activeTab]) ? selected[activeTab] : [];
+                if (['places', 'activities', 'food'].includes(activeTab)) {
+                  items = [...items].sort((a, b) => {
+                    const aComp = !!a.completed;
+                    const bComp = !!b.completed;
+                    if (aComp === bComp) return 0;
+                    return aComp ? 1 : -1;
+                  });
+                }
 
                 if (items.length === 0) {
                   return (
@@ -3659,38 +4594,55 @@ function PlanGoTab({ destinations, setDestinations, filter, selectedId, setSelec
                     </div>
                   );
                 }
-                return items.map(item => (
-                  <div
-                    key={item.id}
-                    className="dash-card"
-                    onClick={() => {
-                      if (activeTab === 'references' && item.link) {
-                        window.open(item.link.startsWith('http') ? item.link : `https://${item.link}`, '_blank');
-                      }
-                    }}
-                    style={activeTab === 'references' ? { cursor: 'pointer' } : {}}
-                  >
-                    <div className="dash-card-icon">
-                      <TabIcon size={18} />
-                    </div>
-                    <div className="dash-card-content">
-                      <div className="dash-card-title">{item.title}</div>
-                      {(item.note || item.link) && (
-                        <div className="dash-card-note">
-                          {activeTab === 'references' ? (
-                            <span style={{ color: 'var(--primary)', textDecoration: 'underline', fontSize: '12px', opacity: 0.8 }}>{item.link}</span>
-                          ) : item.note}
-                        </div>
+                return items.map(item => {
+                  const isCheckable = ['places', 'activities', 'food'].includes(activeTab);
+                  const isCompleted = !!item.completed;
+                  return (
+                    <div
+                      key={item.id}
+                      className={`dash-card ${isCompleted ? 'completed' : ''}`}
+                      onClick={() => {
+                        if (activeTab === 'references' && item.link) {
+                          window.open(item.link.startsWith('http') ? item.link : `https://${item.link}`, '_blank');
+                        }
+                      }}
+                      style={activeTab === 'references' ? { cursor: 'pointer' } : {}}
+                    >
+                      {isCheckable && (
+                        <button
+                          className={`dash-card-checkbox ${isCompleted ? 'checked' : ''}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleItemCompleted(activeTab, item.id);
+                          }}
+                        >
+                          <Check size={14} strokeWidth={3.5} />
+                        </button>
                       )}
+                      <div className="dash-card-icon">
+                        <TabIcon size={18} />
+                      </div>
+                      <div className="dash-card-content">
+                        <div className="dash-card-title">
+                          {item.title}
+                        </div>
+                        {(item.note || item.link) && (
+                          <div className="dash-card-note">
+                            {activeTab === 'references' ? (
+                              <span style={{ color: 'var(--primary)', textDecoration: 'underline', fontSize: '12px', opacity: 0.8 }}>{item.link}</span>
+                            ) : item.note}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ marginTop: -4 }} onClick={e => e.stopPropagation()}>
+                        <ActionMenu
+                          onRemark={() => updateItemRemark(activeTab, item.id)}
+                          onDelete={() => deleteItem(activeTab, item.id)}
+                        />
+                      </div>
                     </div>
-                    <div style={{ marginTop: -4 }} onClick={e => e.stopPropagation()}>
-                      <ActionMenu
-                        onRemark={() => updateItemRemark(activeTab, item.id)}
-                        onDelete={() => deleteItem(activeTab, item.id)}
-                      />
-                    </div>
-                  </div>
-                ));
+                  );
+                });
               })()}
             </div>
           )}
