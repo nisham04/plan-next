@@ -19,6 +19,15 @@ export default defineConfig({
         start_url: '/',
         scope: '/',
         orientation: 'portrait',
+        shortcuts: [
+          {
+            name: "Today's Meals",
+            short_name: 'Today',
+            description: "Open PlanBite Today's Meals widget view",
+            url: '/?widget=today',
+            icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }]
+          }
+        ],
         icons: [
           {
             src: 'icon-192.png',

@@ -58,7 +58,10 @@ import {
   Dumbbell,
   Activity,
   LayoutGrid,
+  Smartphone,
 } from 'lucide-react';
+import TodayWidgetView from './components/TodayWidgetView';
+import WidgetBuilderModal from './components/WidgetBuilderModal';
 
 // â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -2412,11 +2415,19 @@ export default function App() {
   });
   const [selectedWatchId, setSelectedWatchId] = useState(null);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [widgetModalOpen, setWidgetModalOpen] = useState(false);
+  const [isWidgetMode, setIsWidgetMode] = useState(
+    () => new URLSearchParams(window.location.search).get('widget') === 'today'
+  );
+  const widgetParams = new URLSearchParams(window.location.search);
+  const widgetThemeParam = widgetParams.get('theme');
+  const widgetShowTomorrowParam = widgetParams.get('tomorrow') === '1';
   const isExitingRef = useRef(false);
 
 
 
   useEffect(() => {
+    if (isWidgetMode) return;
     const handlePopState = () => {
       if (isExitingRef.current) return;
       setShowExitConfirm(true);
@@ -2425,7 +2436,7 @@ export default function App() {
     window.history.pushState(null, '', window.location.pathname);
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [isWidgetMode]);
 
   // Theme effect
   useEffect(() => {
@@ -2688,6 +2699,41 @@ export default function App() {
     setPickerSlot(null); // Auto-close after selection
   };
 
+  const cachedWidgetPlan = load('mp-plan', {});
+  const activeWidgetPlan = Object.keys(plan).length > 0 ? plan : cachedWidgetPlan;
+
+  if (isWidgetMode) {
+    if (!isAuthChecked && Object.keys(cachedWidgetPlan).length === 0) {
+      return <LoadingOverlay />;
+    }
+    if (isAuthChecked && !user && Object.keys(cachedWidgetPlan).length === 0) {
+      return <LoginScreen />;
+    }
+    return (
+      <>
+        <TodayWidgetView
+          plan={activeWidgetPlan}
+          theme={widgetThemeParam || theme}
+          showTomorrow={widgetShowTomorrowParam}
+          isSyncing={Boolean(user && loading)}
+          onOpenCustomizer={() => setWidgetModalOpen(true)}
+          onOpenFullApp={() => {
+            window.history.replaceState(null, '', '/');
+            setIsWidgetMode(false);
+            setActiveSection('PlanBite');
+          }}
+        />
+        <WidgetBuilderModal
+          isOpen={widgetModalOpen}
+          onClose={() => setWidgetModalOpen(false)}
+          plan={activeWidgetPlan}
+          user={user}
+          appTheme={theme}
+        />
+      </>
+    );
+  }
+
   return (
     <>
       <div className="app-shell">
@@ -2778,6 +2824,14 @@ export default function App() {
                       {activeSection === 'PlanFit' && <div className="sidebar-active-indicator" />}
                     </button>
 
+                    <button
+                      className="sidebar-nav-item"
+                      onClick={() => { setWidgetModalOpen(true); setSidebarOpen(false); }}
+                    >
+                      <Smartphone size={22} />
+                      <span className="sidebar-nav-title">Phone Widget</span>
+                    </button>
+
                     <div className="sidebar-footer">
                       <button className="sidebar-logout-btn" onClick={() => { signOut(auth); setSidebarOpen(false); }}>
                         <LogOut size={22} />
@@ -2808,6 +2862,9 @@ export default function App() {
               </div>
             </div>
             <div className="header-actions">
+              <button className="header-refresh-btn" onClick={() => setWidgetModalOpen(true)} title="Phone Home Widget">
+                <Smartphone size={18} />
+              </button>
               <button className="header-refresh-btn" onClick={toggleTheme} title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}>
                 {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
               </button>
@@ -2959,6 +3016,14 @@ export default function App() {
             }}
             title="Exit PlanNext?"
             message="Are you sure you want to exit the app?"
+          />
+
+          <WidgetBuilderModal
+            isOpen={widgetModalOpen}
+            onClose={() => setWidgetModalOpen(false)}
+            plan={plan}
+            user={user}
+            appTheme={theme}
           />
 
           {/* Bottom Nav */}
